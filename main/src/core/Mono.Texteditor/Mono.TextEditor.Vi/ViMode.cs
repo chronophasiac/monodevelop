@@ -110,6 +110,7 @@ namespace Mono.TextEditor.Vi
 		Dictionary<char,ViMacro> macros = new Dictionary<char, ViMacro>();
 		char macros_lastplayed = '@'; // start with the illegal macro character
 		string statusText = "";
+		Action lastCommand;
 		
 		/// <summary>
 		/// The macro currently being implemented. Will be set to null and checked as a flag when required.
@@ -327,584 +328,646 @@ namespace Mono.TextEditor.Vi
 				currentMacro.KeysPressed.Enqueue(toAdd);
 			}
 			
-			Action<TextEditorData> action = null;
-			bool lineAction = false;
-			
 			switch (state) {
 			case State.Unknown:
 				Reset (string.Empty);
 				goto case State.Normal;
-			case State.Normal:
-				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0)) {
-					if (key == Gdk.Key.Delete)
-						unicodeKey = 'x';
-					switch ((char)unicodeKey) {
-					case '?':
-					case '/':
-					case ':':
-						state = State.Command;
-						commandBuffer.Append ((char)unicodeKey);
-						Status = commandBuffer.ToString ();
-						return;
+			case State.Normal:     NormalStateHandleKeypress        (unicodeKey, modifier, key); return;
+			case State.Delete:     DeleteStateHandleKeypress        (unicodeKey, modifier, key); return;
+			case State.Yank:       YankStateHandleKeypress          (unicodeKey, modifier, key); return;
+			case State.Change:     ChangeStateHandleKeypress        (unicodeKey, modifier, key); return;
+			case State.Insert:
+			case State.Replace:    InsertReplaceStateHandleKeypress (unicodeKey, modifier, key); return;
+			case State.VisualLine: VisualLineStateHandleKeypress    (unicodeKey, modifier, key); return;
+			case State.Visual:     VisualStateHandleKeypress        (unicodeKey, modifier, key); return;
+			case State.Command:    CommandStateHandleKeypress       (unicodeKey, modifier, key); return;
+			case State.WriteChar:  WriteCharStateHandleKeypress     (unicodeKey, modifier);      return;
+			case State.Indent:     IndentStateHandleKeypress        (unicodeKey, modifier, key); return;
+			case State.Unindent:   UnindentStateHandleKeypress      (unicodeKey, modifier, key); return;
+			case State.G:          GStateHandleKeypress             (unicodeKey, modifier);      return;
+			case State.Mark:       MarkStateHandleKeypress          (unicodeKey, modifier);      return;
+			case State.NameMacro:  NameMacroStateHandleKeypress     (unicodeKey, modifier);      return;
+			case State.PlayMacro:  PlayMacroStateHandleKeypress     (unicodeKey, modifier);      return;
+			case State.GoToMark:   GoToMarkStateHandleKeypress      (unicodeKey, modifier);      return;
+			case State.Fold:       FoldStateHandleKeypress          (unicodeKey, modifier);      return;
+			}
+		}
+
+
+		protected void NormalStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
+		{
+			Action<TextEditorData> action = null;
+			if (((modifier & (Gdk.ModifierType.ControlMask)) == 0)) {
+				if (key == Gdk.Key.Delete)
+					unicodeKey = 'x';
+				switch ((char)unicodeKey) {
+				case '?':
+				case '/':
+				case ':':
+					state = State.Command;
+					commandBuffer.Append ((char)unicodeKey);
+					Status = commandBuffer.ToString ();
+					return;
 					
-					case 'A':
-						RunAction (CaretMoveActions.LineEnd);
-						goto case 'i';
+				case 'A':
+					RunAction (CaretMoveActions.LineEnd);
+					goto case 'i';
 						
-					case 'I':
-						RunAction (CaretMoveActions.LineFirstNonWhitespace);
-						goto case 'i';
+				case 'I':
+					RunAction (CaretMoveActions.LineFirstNonWhitespace);
+					goto case 'i';
 					
-					case 'a':
+				case 'a':
 						//use CaretMoveActions so that we can move past last character on line end
-						RunAction (CaretMoveActions.Right);
-						goto case 'i';
-					case 'i':
-						Caret.Mode = CaretMode.Insert;
-						Status = "-- INSERT --";
-						state = State.Insert;
-						return;
-						
-					case 'R':
-						Caret.Mode = CaretMode.Underscore;
-						Status = "-- REPLACE --";
-						state = State.Replace;
-						return;
-
-					case 'V':
-						Status = "-- VISUAL LINE --";
-						Data.SetSelectLines (Caret.Line, Caret.Line);
-						state = State.VisualLine;
-						return;
-						
-					case 'v':
-						Status = "-- VISUAL --";
-						state = State.Visual;
-						RunAction (ViActions.VisualSelectionFromMoveAction (ViActions.Right));
-						return;
-						
-					case 'd':
-						Status = "d";
-						state = State.Delete;
-						return;
-						
-					case 'y':
-						Status = "y";
-						state = State.Yank;
-						return;
-
-					case 'Y':
-						state = State.Yank;
-						HandleKeypress (Gdk.Key.y, (int)'y', Gdk.ModifierType.None);
-						return;
-						
-					case 'O':
-						RunAction (ViActions.NewLineAbove);
-						goto case 'i';
-						
-					case 'o':
-						RunAction (ViActions.NewLineBelow);
-						goto case 'i';
-						
-					case 'r':
-						Caret.Mode = CaretMode.Underscore;
-						Status = "-- REPLACE --";
-						state = State.WriteChar;
-						return;
-						
-					case 'c':
-						Caret.Mode = CaretMode.Insert;
-						Status = "c";
-						state = State.Change;
-						return;
-						
-					case 'x':
-						if (Data.Caret.Column == Data.Document.GetLine (Data.Caret.Line).Length + 1)
-							return;
-						Status = string.Empty;
-						if (!Data.IsSomethingSelected)
-							RunActions (SelectionActions.FromMoveAction (CaretMoveActions.Right), ClipboardActions.Cut);
-						else
-							RunAction (ClipboardActions.Cut);
-						ViActions.RetreatFromLineEnd (Data);
-						return;
-						
-					case 'X':
-						if (Data.Caret.Column == DocumentLocation.MinColumn)
-							return;
-						Status = string.Empty;
-						if (!Data.IsSomethingSelected && 0 < Caret.Offset)
-							RunActions (SelectionActions.FromMoveAction (CaretMoveActions.Left), ClipboardActions.Cut);
-						else
-							RunAction (ClipboardActions.Cut);
-						return;
-						
-					case 'D':
-						RunActions (SelectionActions.FromMoveAction (CaretMoveActions.LineEnd), ClipboardActions.Cut);
-						return;
-						
-					case 'C':
-						RunActions (SelectionActions.FromMoveAction (CaretMoveActions.LineEnd), ClipboardActions.Cut);
-						goto case 'i';
-						
-					case '>':
-						Status = ">";
-						state = State.Indent;
-						return;
-						
-					case '<':
-						Status = "<";
-						state = State.Unindent;
-						return;
-					case 'n':
-						Search ();
-						return;
-					case 'N':
-						searchBackward = !searchBackward;
-						Search ();
-						searchBackward = !searchBackward;
-						return;
-					case 'p':
-						PasteAfter (false);
-						return;
-					case 'P':
-						PasteBefore (false);
-						return;
-					case 's':
-						if (!Data.IsSomethingSelected)
-							RunAction (SelectionActions.FromMoveAction (CaretMoveActions.Right));
-						RunAction (ClipboardActions.Cut);
-						goto case 'i';
-					case 'S':
-						if (!Data.IsSomethingSelected)
-							RunAction (SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd));
-						else Data.SetSelectLines (Data.MainSelection.Anchor.Line, Data.Caret.Line);
-						RunAction (ClipboardActions.Cut);
-						goto case 'i';
-						
-					case 'g':
-						Status = "g";
-						state = State.G;
-						return;
-						
-					case 'H':
-						Caret.Line = System.Math.Max (DocumentLocation.MinLine, Editor.PointToLocation (0, Editor.LineHeight - 1).Line);
-						return;
-					case 'J':
-						RunAction (ViActions.Join);
-						return;
-					case 'L':
-						int line = Editor.PointToLocation (0, Editor.Allocation.Height - Editor.LineHeight * 2 - 2).Line;
-						if (line < DocumentLocation.MinLine)
-							line = Document.LineCount;
-						Caret.Line = line;
-						return;
-					case 'M':
-						line = Editor.PointToLocation (0, Editor.Allocation.Height/2).Line;
-						if (line < DocumentLocation.MinLine)
-							line = Document.LineCount;
-						Caret.Line = line;
-						return;
-						
-					case '~':
-						RunAction (ViActions.ToggleCase);
-						return;
-						
-					case 'z':
-						Status = "z";
-						state = State.Fold;
-						return;
-						
-					case 'm':
-						Status = "m";
-						state = State.Mark;
-						return;
-						
-					case '`':
-						Status = "`";
-						state = State.GoToMark;
-						return;
-						
-					case '@':
-						Status = "@";
-						state = State.PlayMacro;
-						return;
-	
-					case 'q':
-						if (currentMacro == null) {
-							Status = "q";
-							state = State.NameMacro;
-							return;
-						} 
-						currentMacro = null;
-						Reset("Macro Recorded");
-						return;
-					case '*':
-						SearchWordAtCaret ();
-						return;
-					}
-					
-				}
-				
-				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-				if (action == null)
-					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
-				if (action == null)
-					action = ViActionMaps.GetCommandCharAction ((char)unicodeKey);
-				
-				if (action != null)
-					RunAction (action);
-				
-				//undo/redo may leave MD with a selection mode without activating visual mode
-				CheckVisualMode ();
-				return;
-				
-			case State.Delete:
-				if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0 
-				     && unicodeKey == 'd'))
-				{
-					action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
-					lineAction = true;
-				} else {
-					action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-					if (action == null)
-						action = ViActionMaps.GetDirectionKeyAction (key, modifier);
-					if (action != null)
-						action = SelectionActions.FromMoveAction (action);
-				}
-				
-				if (action != null) {
-					if (lineAction)
-						RunActions (action, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
-					else
-						RunActions (action, ClipboardActions.Cut);
-					Reset ("");
-				} else {
-					Reset ("Unrecognised motion");
-				}
-				
-				return;
-
-			case State.Yank:
-				int offset = Caret.Offset;
-				
-				if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0 
-				     && unicodeKey == 'y'))
-				{
-					action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
-					lineAction	= true;
-				} else {
-					action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-					if (action == null)
-						action = ViActionMaps.GetDirectionKeyAction (key, modifier);
-					if (action != null)
-						action = SelectionActions.FromMoveAction (action);
-				}
-				
-				if (action != null) {
-					RunAction (action);
-					if (Data.IsSomethingSelected && !lineAction)
-						offset = Data.SelectionRange.Offset;
-					RunAction (ClipboardActions.Copy);
-					Reset (string.Empty);
-				} else {
-					Reset ("Unrecognised motion");
-				}
-				Caret.Offset = offset;
-				
-				return;
-				
-			case State.Change:
-				//copied from delete action
-				if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0 
-				     && unicodeKey == 'c'))
-				{
-					action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
-					lineAction = true;
-				} else {
-					action = ViActionMaps.GetEditObjectCharAction ((char)unicodeKey);
-					if (action == null)
-						action = ViActionMaps.GetDirectionKeyAction (key, modifier);
-					if (action != null)
-						action = SelectionActions.FromMoveAction (action);
-				}
-				
-				if (action != null) {
-					if (lineAction)
-						RunActions (action, ClipboardActions.Cut, ViActions.NewLineAbove);
-					else
-						RunActions (action, ClipboardActions.Cut);
+					RunAction (CaretMoveActions.Right);
+					goto case 'i';
+				case 'i':
+					Caret.Mode = CaretMode.Insert;
 					Status = "-- INSERT --";
 					state = State.Insert;
+					return;
+						
+				case 'R':
+					Caret.Mode = CaretMode.Underscore;
+					Status = "-- REPLACE --";
+					state = State.Replace;
+					return;
+
+				case 'V':
+					Status = "-- VISUAL LINE --";
+					Data.SetSelectLines (Caret.Line, Caret.Line);
+					state = State.VisualLine;
+					return;
+
+				case 'v':
+					Status = "-- VISUAL --";
+					state = State.Visual;
+					RunAction (ViActions.VisualSelectionFromMoveAction (ViActions.Right));
+					return;
+						
+				case 'd':
+					Status = "d";
+					state = State.Delete;
+					return;
+						
+				case 'y':
+					Status = "y";
+					state = State.Yank;
+					return;
+
+				case 'Y':
+					state = State.Yank;
+					HandleKeypress (Gdk.Key.y, (int)'y', Gdk.ModifierType.None);
+					return;
+						
+				case 'O':
+					RunAction (ViActions.NewLineAbove);
+					goto case 'i';
+						
+				case 'o':
+					RunAction (ViActions.NewLineBelow);
+					goto case 'i';
+						
+				case 'r':
+					Caret.Mode = CaretMode.Underscore;
+					Status = "-- REPLACE --";
+					state = State.WriteChar;
+					return;
+						
+				case 'c':
 					Caret.Mode = CaretMode.Insert;
-				} else {
-					Reset ("Unrecognised motion");
-				}
-				
-				return;
-				
-			case State.Insert:
-			case State.Replace:
-				action = GetInsertAction (key, modifier);
-				
-				if (action != null)
-					RunAction (action);
-				else if (unicodeKey != 0)
-					InsertCharacter (unicodeKey);
-				
-				return;
-
-			case State.VisualLine:
-				if (key == Gdk.Key.Delete)
-					unicodeKey = 'x';
-				switch ((char)unicodeKey) {
-				case 'p':
-					PasteAfter (true);
+					Status = "c";
+					state = State.Change;
 					return;
-				case 'P':
-					PasteBefore (true);
+						
+				case 'x':
+					if (Data.Caret.Column == Data.Document.GetLine (Data.Caret.Line).Length + 1)
+						return;
+					Status = string.Empty;
+					if (!Data.IsSomethingSelected)
+						DoAction (() => {
+							RunActions (SelectionActions.FromMoveAction (CaretMoveActions.Right), ClipboardActions.Cut);
+						}
+						);
+					else
+						DoAction (() => {
+							RunAction (ClipboardActions.Cut);
+						}
+						);
+					ViActions.RetreatFromLineEnd (Data);
 					return;
-				}
-				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-				if (action == null) {
-					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
-				}
-				if (action == null) {
-					action = ViActionMaps.GetCommandCharAction ((char)unicodeKey);
-				}
-				if (action != null) {
-					RunAction (SelectionActions.LineActionFromMoveAction (action));
+						
+				case 'X':
+					if (Data.Caret.Column == DocumentLocation.MinColumn)
+						return;
+					Status = string.Empty;
+					if (!Data.IsSomethingSelected && 0 < Caret.Offset)
+						RunActions (SelectionActions.FromMoveAction (CaretMoveActions.Left), ClipboardActions.Cut);
+					else
+						RunAction (ClipboardActions.Cut);
 					return;
-				}
-
-				ApplyActionToSelection (modifier, unicodeKey);
-				return;
-
-			case State.Visual:
-				if (key == Gdk.Key.Delete)
-					unicodeKey = 'x';
-				switch ((char)unicodeKey) {
+						
+				case 'D':
+					RunActions (SelectionActions.FromMoveAction (CaretMoveActions.LineEnd), ClipboardActions.Cut);
+					return;
+						
+				case 'C':
+					RunActions (SelectionActions.FromMoveAction (CaretMoveActions.LineEnd), ClipboardActions.Cut);
+					goto case 'i';
+						
+				case '>':
+					Status = ">";
+					state = State.Indent;
+					return;
+						
+				case '<':
+					Status = "<";
+					state = State.Unindent;
+					return;
+				case 'n':
+					Search ();
+					return;
+				case 'N':
+					searchBackward = !searchBackward;
+					Search ();
+					searchBackward = !searchBackward;
+					return;
 				case 'p':
 					PasteAfter (false);
 					return;
 				case 'P':
 					PasteBefore (false);
 					return;
-				}
-				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-				if (action == null) {
-					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
-				}
-				if (action == null) {
-					action = ViActionMaps.GetCommandCharAction ((char)unicodeKey);
-				}
-				if (action != null) {
-					RunAction (ViActions.VisualSelectionFromMoveAction (action));
+				case 's':
+					if (!Data.IsSomethingSelected)
+						RunAction (SelectionActions.FromMoveAction (CaretMoveActions.Right));
+					RunAction (ClipboardActions.Cut);
+					goto case 'i';
+				case 'S':
+					if (!Data.IsSomethingSelected)
+						RunAction (SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd));
+					else
+						Data.SetSelectLines (Data.MainSelection.Anchor.Line, Data.Caret.Line);
+					RunAction (ClipboardActions.Cut);
+					goto case 'i';
+						
+				case 'g':
+					Status = "g";
+					state = State.G;
 					return;
-				}
-
-				ApplyActionToSelection (modifier, unicodeKey);
-				return;
-				
-			case State.Command:
-				switch (key) {
-				case Gdk.Key.Return:
-				case Gdk.Key.KP_Enter:
-					Status = RunExCommand (commandBuffer.ToString ());
-					commandBuffer.Length = 0;
-					state = State.Normal;
-					break;
-				case Gdk.Key.BackSpace:
-				case Gdk.Key.Delete:
-				case Gdk.Key.KP_Delete:
-					if (0 < commandBuffer.Length) {
-						commandBuffer.Remove (commandBuffer.Length-1, 1);
-						Status = commandBuffer.ToString ();
-						if (0 == commandBuffer.Length)
-							Reset (Status);
-					}
-					break;
-				default:
-					if(unicodeKey != 0) {
-						commandBuffer.Append ((char)unicodeKey);
-						Status = commandBuffer.ToString ();
-					}
-					break;
-				}
-				return;
-				
-			case State.WriteChar:
-				if (unicodeKey != 0) {
-					RunAction (SelectionActions.StartSelection);
-					int   roffset = Data.SelectionRange.Offset;
-					InsertCharacter ((char) unicodeKey);
-					Reset (string.Empty);
-					Caret.Offset = roffset;
-				} else {
-					Reset ("Keystroke was not a character");
-				}
-				return;
-				
-			case State.Indent:
-				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0 && unicodeKey == '>'))
-				{
-					RunAction (MiscActions.IndentSelection);
-					Reset ("");
+						
+				case 'H':
+					Caret.Line = System.Math.Max (DocumentLocation.MinLine, Editor.PointToLocation (0, Editor.LineHeight - 1).Line);
 					return;
-				}
-				
-				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-				if (action == null)
-					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
-				
-				if (action != null) {
-					RunActions (SelectionActions.FromMoveAction (action), MiscActions.IndentSelection);
-					Reset ("");
-				} else {
-					Reset ("Unrecognised motion");
-				}
-				return;
-				
-			case State.Unindent:
-				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0 && ((char)unicodeKey) == '<'))
-				{
-					RunAction (MiscActions.RemoveIndentSelection);
-					Reset ("");
+				case 'J':
+					RunAction (ViActions.Join);
 					return;
-				}
-				
-				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-				if (action == null)
-					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
-				
-				if (action != null) {
-					RunActions (SelectionActions.FromMoveAction (action), MiscActions.RemoveIndentSelection);
-					Reset ("");
-				} else {
-					Reset ("Unrecognised motion");
-				}
-				return;
-
-			case State.G:
-				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0)) {
-					switch ((char)unicodeKey) {
-					case 'g':
-						Caret.Offset = 0;
-						Reset ("");
+				case 'L':
+					int line = Editor.PointToLocation (0, Editor.Allocation.Height - Editor.LineHeight * 2 - 2).Line;
+					if (line < DocumentLocation.MinLine)
+						line = Document.LineCount;
+					Caret.Line = line;
+					return;
+				case 'M':
+					line = Editor.PointToLocation (0, Editor.Allocation.Height / 2).Line;
+					if (line < DocumentLocation.MinLine)
+						line = Document.LineCount;
+					Caret.Line = line;
+					return;
+						
+				case '~':
+					RunAction (ViActions.ToggleCase);
+					return;
+						
+				case 'z':
+					Status = "z";
+					state = State.Fold;
+					return;
+						
+				case 'm':
+					Status = "m";
+					state = State.Mark;
+					return;
+						
+				case '`':
+					Status = "`";
+					state = State.GoToMark;
+					return;
+						
+				case '@':
+					Status = "@";
+					state = State.PlayMacro;
+					return;
+	
+				case 'q':
+					if (currentMacro == null) {
+						Status = "q";
+						state = State.NameMacro;
 						return;
-					}
-				}
-				Reset ("Unknown command");
-				return;
-				
-			case State.Mark: {
-				char k = (char)unicodeKey;
-				ViMark mark = null;
-				if (!char.IsLetterOrDigit(k)) {
-					Reset ("Invalid Mark");
+					} 
+					currentMacro = null;
+					Reset ("Macro Recorded");
 					return;
-				}
-				if (marks.ContainsKey(k)) {
-					mark = marks [k];
-				} else {
-					mark = new ViMark(k);
-					marks [k] = mark;
-				}
-				RunAction(mark.SaveMark);
-				Reset("");
-				return;
-			}
-			
-			case State.NameMacro: {
-				char k = (char) unicodeKey;
-				if(!char.IsLetterOrDigit(k)) {
-					Reset("Invalid Macro Name");
+
+				case '*':
+					SearchWordAtCaret ();
 					return;
-				}
-				currentMacro = new ViMacro (k);
-				currentMacro.KeysPressed = new Queue<ViMacro.KeySet> ();
-				macros [k] = currentMacro;
-				Reset("");
-				return;
-			}
-			
-			case State.PlayMacro: {
-				char k = (char) unicodeKey;
-				if (k == '@') 
-					k = macros_lastplayed;
-				if (macros.ContainsKey(k)) {
-					Reset ("");
-					macros_lastplayed = k; // FIXME play nice when playing macros from inside macros?
-					ViMacro macroToPlay = macros [k];
-					foreach (ViMacro.KeySet keySet in macroToPlay.KeysPressed) {
-						HandleKeypress(keySet.Key, keySet.UnicodeKey, keySet.Modifiers); // FIXME stop on errors? essential with multipliers and nowrapscan
-					}
-					/* Once all the keys have been played back, quickly exit. */
+
+				case '.':
+					RepeatAction ();
 					return;
-				} else {
-					Reset ("Invalid Macro Name '" + k + "'");
-					return;
-				}
-			}
-			
-			case State.GoToMark: {
-				char k = (char)unicodeKey;
-				if (marks.ContainsKey(k)) {
-					RunAction(marks [k].LoadMark);
-					Reset ("");
-				} else {
-					Reset ("Unknown Mark");
-				}
-				return;
-			}
-				
-			case State.Fold:
-				if (((modifier & (Gdk.ModifierType.ControlMask)) == 0)) {
-					switch ((char)unicodeKey) {
-						case 'A':
-						// Recursive fold toggle
-							action = FoldActions.ToggleFoldRecursive;
-							break;
-						case 'C':
-						// Recursive fold close
-							action = FoldActions.CloseFoldRecursive;
-							break;
-						case 'M':
-						// Close all folds
-							action = FoldActions.CloseAllFolds;
-							break;
-						case 'O':
-						// Recursive fold open
-							action = FoldActions.OpenFoldRecursive;
-							break;
-						case 'R':
-						// Expand all folds
-							action = FoldActions.OpenAllFolds;
-							break;
-						case 'a':
-						// Fold toggle
-							action = FoldActions.ToggleFold;
-							break;
-						case 'c':
-						// Fold close
-							action = FoldActions.CloseFold;
-							break;
-						case 'o':
-						// Fold open
-							action = FoldActions.OpenFold;
-							break;
-						default:
-							Reset ("Unknown command");
-							break;
-					}
-					
-					if (null != action) {
-						RunAction (action);
-						Reset (string.Empty);
-					}
 				}
 					
+			}
+				
+			action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+			if (action == null)
+				action = ViActionMaps.GetDirectionKeyAction (key, modifier);
+			if (action == null)
+				action = ViActionMaps.GetCommandCharAction ((char)unicodeKey);
+				
+			if (action != null)
+				RunAction (action);
+				
+			//undo/redo may leave MD with a selection mode without activating visual mode
+			CheckVisualMode ();
+			return;
+		}
+
+		protected void DeleteStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
+		{
+			Action<TextEditorData> action = null;
+			bool lineAction = false;
+			if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0 
+				&& unicodeKey == 'd')) {
+				action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
+				lineAction = true;
+			} else {
+				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+				if (action == null)
+					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
+				if (action != null)
+					action = SelectionActions.FromMoveAction (action);
+			}
+				
+			if (action != null) {
+				DoAction (() => {
+					if (lineAction)
+						RunActions (action, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
+					else
+						RunActions (action, ClipboardActions.Cut);
+				}
+				);
+				Reset ("");
+			} else {
+				Reset ("Unrecognised motion");
+			}
+				
+			return;
+		}
+
+		protected void YankStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
+		{
+			Action<TextEditorData> action = null;
+			bool lineAction = false;
+			int offset = Caret.Offset;
+			
+			if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0 
+			     && unicodeKey == 'y'))
+			{
+				action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
+				lineAction	= true;
+			} else {
+				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+				if (action == null)
+					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
+				if (action != null)
+					action = SelectionActions.FromMoveAction (action);
+			}
+			
+			if (action != null) {
+				RunAction (action);
+				if (Data.IsSomethingSelected && !lineAction)
+					offset = Data.SelectionRange.Offset;
+				RunAction (ClipboardActions.Copy);
+				Reset (string.Empty);
+			} else {
+				Reset ("Unrecognised motion");
+			}
+			Caret.Offset = offset;
+			
+			return;
+		}
+
+		protected void ChangeStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
+		{
+			Action<TextEditorData> action = null;
+			bool lineAction = false;
+			//copied from delete action
+			if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0 
+				&& unicodeKey == 'c')) {
+				action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
+				lineAction = true;
+			} else {
+				action = ViActionMaps.GetEditObjectCharAction ((char)unicodeKey);
+				if (action == null)
+					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
+				if (action != null)
+					action = SelectionActions.FromMoveAction (action);
+			}
+				
+			if (action != null) {
+				if (lineAction)
+					RunActions (action, ClipboardActions.Cut, ViActions.NewLineAbove);
+				else
+					RunActions (action, ClipboardActions.Cut);
+				Status = "-- INSERT --";
+				state = State.Insert;
+				Caret.Mode = CaretMode.Insert;
+			} else {
+				Reset ("Unrecognised motion");
+			}
+				
+			return;
+		}
+
+		protected void InsertReplaceStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
+		{
+			Action<TextEditorData> action = GetInsertAction (key, modifier);
+			if (action != null)
+				RunAction (action);
+			else if (unicodeKey != 0)
+				InsertCharacter (unicodeKey);
+				
+			return;
+		}
+
+		protected void VisualLineStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
+		{
+			if (key == Gdk.Key.Delete)
+				unicodeKey = 'x';
+			switch ((char)unicodeKey) {
+			case 'p':
+				PasteAfter (true);
 				return;
+			case 'P':
+				PasteBefore (true);
+				return;
+			}
+			Action<TextEditorData> action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+			if (action == null) {
+				action = ViActionMaps.GetDirectionKeyAction (key, modifier);
+			}
+			if (action == null) {
+				action = ViActionMaps.GetCommandCharAction ((char)unicodeKey);
+			}
+			if (action != null) {
+				RunAction (SelectionActions.LineActionFromMoveAction (action));
+				return;
+			}
+
+			ApplyActionToSelection (modifier, unicodeKey);
+			return;
+		}
+
+		protected void VisualStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
+		{
+			if (key == Gdk.Key.Delete)
+				unicodeKey = 'x';
+			switch ((char)unicodeKey) {
+			case 'p':
+				PasteAfter (false);
+				return;
+			case 'P':
+				PasteBefore (false);
+				return;
+			}
+			Action<TextEditorData> action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+			if (action == null) {
+				action = ViActionMaps.GetDirectionKeyAction (key, modifier);
+			}
+			if (action == null) {
+				action = ViActionMaps.GetCommandCharAction ((char)unicodeKey);
+			}
+			if (action != null) {
+				RunAction (ViActions.VisualSelectionFromMoveAction (action));
+				return;
+			}
+
+			ApplyActionToSelection (modifier, unicodeKey);
+			return;
+		}
+
+		protected void CommandStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
+		{
+			switch (key) {
+			case Gdk.Key.Return:
+			case Gdk.Key.KP_Enter:
+				Status = RunExCommand (commandBuffer.ToString ());
+				commandBuffer.Length = 0;
+				state = State.Normal;
+				break;
+			case Gdk.Key.BackSpace:
+			case Gdk.Key.Delete:
+			case Gdk.Key.KP_Delete:
+				if (0 < commandBuffer.Length) {
+					commandBuffer.Remove (commandBuffer.Length - 1, 1);
+					Status = commandBuffer.ToString ();
+					if (0 == commandBuffer.Length)
+						Reset (Status);
+				}
+				break;
+			default:
+				if (unicodeKey != 0) {
+					commandBuffer.Append ((char)unicodeKey);
+					Status = commandBuffer.ToString ();
+				}
+				break;
+			}
+			return;
+		}
+
+		protected void WriteCharStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier)
+		{
+			if (unicodeKey != 0) {
+				RunAction (SelectionActions.StartSelection);
+				int roffset = Data.SelectionRange.Offset;
+				InsertCharacter ((char)unicodeKey);
+				Reset (string.Empty);
+				Caret.Offset = roffset;
+			} else {
+				Reset ("Keystroke was not a character");
+			}
+			return;
+		}
+
+		protected void IndentStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier,  Gdk.Key key)
+		{
+			if (((modifier & (Gdk.ModifierType.ControlMask)) == 0 && unicodeKey == '>')) {
+				RunAction (MiscActions.IndentSelection);
+				Reset ("");
+				return;
+			}
+			
+			Action<TextEditorData> action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+			if (action == null)
+				action = ViActionMaps.GetDirectionKeyAction (key, modifier);
+			
+			if (action != null) {
+				RunActions (SelectionActions.FromMoveAction (action), MiscActions.IndentSelection);
+				Reset ("");
+			} else {
+				Reset ("Unrecognised motion");
+			}
+			return;
+		}
+
+		protected void UnindentStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier,  Gdk.Key key)
+		{
+			if (((modifier & (Gdk.ModifierType.ControlMask)) == 0 && ((char)unicodeKey) == '<')) {
+				RunAction (MiscActions.RemoveIndentSelection);
+				Reset ("");
+				return;
+			}
+			
+			Action<TextEditorData> action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+			if (action == null)
+				action = ViActionMaps.GetDirectionKeyAction (key, modifier);
+			
+			if (action != null) {
+				RunActions (SelectionActions.FromMoveAction (action), MiscActions.RemoveIndentSelection);
+				Reset ("");
+			} else {
+				Reset ("Unrecognised motion");
+			}
+			return;
+		}
+
+		protected void GStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier)
+		{
+			if (((modifier & (Gdk.ModifierType.ControlMask)) == 0)) {
+				switch ((char)unicodeKey) {
+				case 'g':
+					Caret.Offset = 0;
+					Reset ("");
+					return;
+				}
+			}
+			Reset ("Unknown command");
+			return;
+		}
+
+		protected void MarkStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier)
+		{
+			char k = (char)unicodeKey;
+			ViMark mark = null;
+			if (!char.IsLetterOrDigit(k)) {
+				Reset ("Invalid Mark");
+				return;
+			}
+			if (marks.ContainsKey(k)) {
+				mark = marks [k];
+			} else {
+				mark = new ViMark(k);
+				marks [k] = mark;
+			}
+			RunAction(mark.SaveMark);
+			Reset("");
+			return;
+		}
+
+		protected void NameMacroStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier)
+		{
+			char k = (char) unicodeKey;
+			if(!char.IsLetterOrDigit(k)) {
+				Reset("Invalid Macro Name");
+				return;
+			}
+			currentMacro = new ViMacro (k);
+			currentMacro.KeysPressed = new Queue<ViMacro.KeySet> ();
+			macros [k] = currentMacro;
+			Reset("");
+			return;
+		}	
+
+		protected void PlayMacroStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier)
+		{
+			char k = (char) unicodeKey;
+			if (k == '@') 
+				k = macros_lastplayed;
+			if (macros.ContainsKey(k)) {
+				Reset ("");
+				macros_lastplayed = k; // FIXME play nice when playing macros from inside macros?
+				ViMacro macroToPlay = macros [k];
+				foreach (ViMacro.KeySet keySet in macroToPlay.KeysPressed) {
+					HandleKeypress(keySet.Key, keySet.UnicodeKey, keySet.Modifiers); // FIXME stop on errors? essential with multipliers and nowrapscan
+				}
+				// Once all the keys have been played back, quickly exit.
+				return;
+			} else {
+				Reset ("Invalid Macro Name '" + k + "'");
+				return;
+			}
+		}	
+
+		protected void GoToMarkStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier)
+		{
+			char k = (char)unicodeKey;
+			if (marks.ContainsKey(k)) {
+				RunAction(marks [k].LoadMark);
+				Reset ("");
+			} else {
+				Reset ("Unknown Mark");
+			}
+			return;
+		}
+
+		protected void FoldStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier)
+		{
+			Action<TextEditorData> action = null;
+			if (((modifier & (Gdk.ModifierType.ControlMask)) == 0)) {
+				switch ((char)unicodeKey) {
+					case 'A':
+					// Recursive fold toggle
+						action = FoldActions.ToggleFoldRecursive;
+						break;
+					case 'C':
+					// Recursive fold close
+						action = FoldActions.CloseFoldRecursive;
+						break;
+					case 'M':
+					// Close all folds
+						action = FoldActions.CloseAllFolds;
+						break;
+					case 'O':
+					// Recursive fold open
+						action = FoldActions.OpenFoldRecursive;
+						break;
+					case 'R':
+					// Expand all folds
+						action = FoldActions.OpenAllFolds;
+						break;
+					case 'a':
+					// Fold toggle
+						action = FoldActions.ToggleFold;
+						break;
+					case 'c':
+					// Fold close
+						action = FoldActions.CloseFold;
+						break;
+					case 'o':
+					// Fold open
+						action = FoldActions.OpenFold;
+						break;
+					default:
+						Reset ("Unknown command");
+						break;
+				}
+				
+				if (null != action) {
+					RunAction (action);
+					Reset (string.Empty);
+				}
 			}
 		}
 
@@ -950,6 +1013,18 @@ namespace Mono.TextEditor.Vi
 			}
 
 			return "Performed replacement.";
+		}
+
+		public void DoAction (Action act)
+		{
+			lastCommand = act;
+			act();
+		}
+
+		public void RepeatAction ()
+		{
+			if (lastCommand != null)
+				lastCommand ();
 		}
 
 		public void ApplyActionToSelection (Gdk.ModifierType modifier, uint unicodeKey)
