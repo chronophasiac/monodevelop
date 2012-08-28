@@ -885,7 +885,7 @@ namespace Mono.TextEditor
 			               this.Allocation.Width, this.Allocation.Height - y);
 		}
 		
-		public void RunAction (Action<TextEditorData> action)
+		public void RunActions (Action<TextEditorData> action)
 		{
 			try {
 				action (this.textEditorData);

@@ -123,7 +123,7 @@ namespace Mono.TextEditor.Vi
 				data.Caret.PreserveSelection = false;
 		}
 		
-		public void RunAction (Action<ViEditor> action)
+		public void RunActions (Action<ViEditor> action)
 		{
 			Completed = true;
 			
@@ -280,7 +280,7 @@ namespace Mono.TextEditor.Vi
 		
 		static bool Insert (ViBuilderContext ctx)
 		{
-			ctx.RunAction ((ViEditor e) => e.SetMode (ViEditorMode.Insert));
+			ctx.RunActions ((ViEditor e) => e.SetMode (ViEditorMode.Insert));
 			ctx.SuppressCompleted ();
 			
 			ctx.Builder = ViBuilders.InsertBuilder (insertActions);
@@ -289,7 +289,7 @@ namespace Mono.TextEditor.Vi
 		
 		static bool Replace (ViBuilderContext ctx)
 		{
-			ctx.RunAction ((ViEditor e) => e.SetMode (ViEditorMode.Replace));
+			ctx.RunActions ((ViEditor e) => e.SetMode (ViEditorMode.Replace));
 			ctx.SuppressCompleted ();
 			
 			ctx.Builder = ViBuilders.InsertBuilder (insertActions);
@@ -298,14 +298,14 @@ namespace Mono.TextEditor.Vi
 		
 		static bool Open (ViBuilderContext ctx)
 		{
-			ctx.RunAction ((ViEditor e) => MiscActions.InsertNewLineAtEnd (e.Data));
+			ctx.RunActions ((ViEditor e) => MiscActions.InsertNewLineAtEnd (e.Data));
 			return Insert (ctx);
 		}
 		
 		static bool OpenAbove (ViBuilderContext ctx)
 		{
 			// FIXME: this doesn't work correctly on the first line
-			ctx.RunAction ((ViEditor e) => ViActions.Up (e.Data));
+			ctx.RunActions ((ViEditor e) => ViActions.Up (e.Data));
 			return Open (ctx);
 		}
 	}

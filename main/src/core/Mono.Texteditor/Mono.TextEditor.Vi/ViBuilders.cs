@@ -41,7 +41,7 @@ namespace Mono.TextEditor.Vi
 				return true;
 			}
 			
-			ctx.RunAction ((ViEditor ed) => {
+			ctx.RunActions ((ViEditor ed) => {
 				ViMark mark;
 				if (!ed.Marks.TryGetValue (c, out mark))
 					ed.Marks [c] = mark = new ViMark (c);
@@ -61,7 +61,7 @@ namespace Mono.TextEditor.Vi
 				ctx.Message = ctx.Mode == ViEditorMode.Replace? "-- REPLACE --" : "-- INSERT --";
 				
 				if ((noModifiers && l.Key == Key.Escape) || (l.Char == 'c' && (l.Modifiers & ModifierType.ControlMask) != 0)) {
-					ctx.RunAction ((ViEditor ed) => {
+					ctx.RunActions ((ViEditor ed) => {
 						if (inUndoTx)
 						{
 							ed.Document.EndAtomicUndo ();
@@ -76,7 +76,7 @@ namespace Mono.TextEditor.Vi
 				//keypad motions etc
 				if (preInsertActions (ctx)) {
 					if (inUndoTx)
-						ctx.RunAction ( (ed) => ed.Document.EndAtomicUndo () );
+						ctx.RunActions ( (ed) => ed.Document.EndAtomicUndo () );
 					inUndoTx = false;
 					ctx.SuppressCompleted ();
 					lastInserted.Length = 0;
@@ -85,7 +85,7 @@ namespace Mono.TextEditor.Vi
 				
 				if (l.Char != '\0' && noModifiers) {
 					if (!inUndoTx)
-						ctx.RunAction ( (ed) => ed.Document.BeginAtomicUndo () );
+						ctx.RunActions ( (ed) => ed.Document.BeginAtomicUndo () );
 					inUndoTx = true;
 					ctx.SuppressCompleted ();
 					lastInserted.Append (l.Char);
@@ -105,7 +105,7 @@ namespace Mono.TextEditor.Vi
 				return true;
 			}
 			
-			ctx.RunAction ((ViEditor ed) => {
+			ctx.RunActions ((ViEditor ed) => {
 				ViMark mark;
 				if (ed.Marks.TryGetValue (c, out mark))
 					mark.LoadMark (ed.Data);
@@ -119,7 +119,7 @@ namespace Mono.TextEditor.Vi
 		public static bool ReplaceChar (ViBuilderContext ctx)
 		{
 			if (ctx.LastKey.Char != '\0')
-				ctx.RunAction ((ViEditor ed) => ed.Data.Replace (ed.Data.Caret.Offset, 1, ctx.LastKey.Char.ToString ()));
+				ctx.RunActions ((ViEditor ed) => ed.Data.Replace (ed.Data.Caret.Offset, 1, ctx.LastKey.Char.ToString ()));
 			else
 				ctx.SetError ("Expecting a character");
 			return true;

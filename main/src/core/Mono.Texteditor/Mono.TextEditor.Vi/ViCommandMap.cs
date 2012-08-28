@@ -39,7 +39,7 @@ namespace Mono.TextEditor.Vi
 		{
 			Action<ViEditor> a;
 			if (actions.TryGetValue (ctx.LastKey, out a)) {
-				ctx.RunAction (a);
+				ctx.RunActions (a);
 				return true;
 			} else {
 				BuilderAction b;

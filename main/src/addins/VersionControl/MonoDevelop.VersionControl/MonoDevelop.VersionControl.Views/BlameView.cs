@@ -115,17 +115,17 @@ namespace MonoDevelop.VersionControl.Views
 		#region IClipboardHandler implementation
 		void IClipboardHandler.Cut ()
 		{
-			this.widget.Editor.RunAction (ClipboardActions.Cut);
+			this.widget.Editor.RunActions (ClipboardActions.Cut);
 		}
 
 		void IClipboardHandler.Copy ()
 		{
-			this.widget.Editor.RunAction (ClipboardActions.Copy);
+			this.widget.Editor.RunActions (ClipboardActions.Copy);
 		}
 
 		void IClipboardHandler.Paste ()
 		{
-			this.widget.Editor.RunAction (ClipboardActions.Paste);
+			this.widget.Editor.RunActions (ClipboardActions.Paste);
 		}
 
 		void IClipboardHandler.Delete ()
@@ -133,13 +133,13 @@ namespace MonoDevelop.VersionControl.Views
 			if (this.widget.Editor.IsSomethingSelected) {
 				this.widget.Editor.DeleteSelectedText ();
 			} else {
-				this.widget.Editor.RunAction (DeleteActions.Delete);
+				this.widget.Editor.RunActions (DeleteActions.Delete);
 			}
 		}
 
 		void IClipboardHandler.SelectAll ()
 		{
-			this.widget.Editor.RunAction (SelectionActions.SelectAll);
+			this.widget.Editor.RunActions (SelectionActions.SelectAll);
 		}
 
 		bool IClipboardHandler.EnableCut {

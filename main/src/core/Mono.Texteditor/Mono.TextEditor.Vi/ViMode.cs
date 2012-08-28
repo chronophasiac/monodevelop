@@ -111,6 +111,7 @@ namespace Mono.TextEditor.Vi
 		char macros_lastplayed = '@'; // start with the illegal macro character
 		string statusText = "";
 		Action lastCommand;
+		List<Action> recordedAction;
 		
 		/// <summary>
 		/// The macro currently being implemented. Will be set to null and checked as a flag when required.
@@ -145,7 +146,7 @@ namespace Mono.TextEditor.Vi
 					if (line < DocumentLocation.MinLine || line > Data.Document.LineCount) {
 						return "Invalid line number.";
 					} else if (line == 0) {
-						RunAction (CaretMoveActions.ToDocumentStart);
+						RunActions (CaretMoveActions.ToDocumentStart);
 						return "Jumped to beginning of document.";
 					}
 					
@@ -172,7 +173,7 @@ namespace Mono.TextEditor.Vi
 					
 				case '$':
 					if (command.Length == 2) {
-						RunAction (CaretMoveActions.ToDocumentEnd);
+						RunActions (CaretMoveActions.ToDocumentEnd);
 						return "Jumped to end of document.";
 					}
 					break;	
@@ -370,25 +371,27 @@ namespace Mono.TextEditor.Vi
 					return;
 					
 				case 'A':
-					RunAction (CaretMoveActions.LineEnd);
-					goto case 'i';
+					InsertState (CaretMoveActions.LineEnd);
+					return;
 						
 				case 'I':
-					RunAction (CaretMoveActions.LineFirstNonWhitespace);
-					goto case 'i';
-					
+					InsertState (CaretMoveActions.LineFirstNonWhitespace);
+					return;
+
 				case 'a':
 						//use CaretMoveActions so that we can move past last character on line end
-					RunAction (CaretMoveActions.Right);
-					goto case 'i';
+					InsertState (CaretMoveActions.Right);
+					return;
+
 				case 'i':
-					Caret.Mode = CaretMode.Insert;
-					Status = "-- INSERT --";
-					state = State.Insert;
+					InsertState ();
 					return;
 						
 				case 'R':
-					Caret.Mode = CaretMode.Underscore;
+					ClearRecordedAction();
+					DoAction (() => {
+						Caret.Mode = CaretMode.Underscore;
+					}, true);
 					Status = "-- REPLACE --";
 					state = State.Replace;
 					return;
@@ -402,7 +405,7 @@ namespace Mono.TextEditor.Vi
 				case 'v':
 					Status = "-- VISUAL --";
 					state = State.Visual;
-					RunAction (ViActions.VisualSelectionFromMoveAction (ViActions.Right));
+					RunActions (ViActions.VisualSelectionFromMoveAction (ViActions.Right));
 					return;
 						
 				case 'd':
@@ -421,15 +424,18 @@ namespace Mono.TextEditor.Vi
 					return;
 						
 				case 'O':
-					RunAction (ViActions.NewLineAbove);
-					goto case 'i';
+					InsertState (ViActions.NewLineAbove);
+					return;
 						
 				case 'o':
-					RunAction (ViActions.NewLineBelow);
-					goto case 'i';
-						
+					InsertState (ViActions.NewLineBelow);
+					return;
+
 				case 'r':
-					Caret.Mode = CaretMode.Underscore;
+					ClearRecordedAction();
+					DoAction (() => {
+						Caret.Mode = CaretMode.Underscore;
+					}, true);
 					Status = "-- REPLACE --";
 					state = State.WriteChar;
 					return;
@@ -451,7 +457,7 @@ namespace Mono.TextEditor.Vi
 						);
 					else
 						DoAction (() => {
-							RunAction (ClipboardActions.Cut);
+							RunActions (ClipboardActions.Cut);
 						}
 						);
 					ViActions.RetreatFromLineEnd (Data);
@@ -464,7 +470,7 @@ namespace Mono.TextEditor.Vi
 					if (!Data.IsSomethingSelected && 0 < Caret.Offset)
 						RunActions (SelectionActions.FromMoveAction (CaretMoveActions.Left), ClipboardActions.Cut);
 					else
-						RunAction (ClipboardActions.Cut);
+						RunActions (ClipboardActions.Cut);
 					return;
 						
 				case 'D':
@@ -472,9 +478,9 @@ namespace Mono.TextEditor.Vi
 					return;
 						
 				case 'C':
-					RunActions (SelectionActions.FromMoveAction (CaretMoveActions.LineEnd), ClipboardActions.Cut);
-					goto case 'i';
-						
+					InsertState (SelectionActions.FromMoveAction (CaretMoveActions.LineEnd), ClipboardActions.Cut);
+					return;
+
 				case '>':
 					Status = ">";
 					state = State.Indent;
@@ -500,17 +506,20 @@ namespace Mono.TextEditor.Vi
 					return;
 				case 's':
 					if (!Data.IsSomethingSelected)
-						RunAction (SelectionActions.FromMoveAction (CaretMoveActions.Right));
-					RunAction (ClipboardActions.Cut);
-					goto case 'i';
+						InsertState (SelectionActions.FromMoveAction (CaretMoveActions.Right), ClipboardActions.Cut);
+					else
+						InsertState (ClipboardActions.Cut);
+					return;
+
 				case 'S':
 					if (!Data.IsSomethingSelected)
-						RunAction (SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd));
-					else
+						InsertState (SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd), ClipboardActions.Cut);
+					else {
 						Data.SetSelectLines (Data.MainSelection.Anchor.Line, Data.Caret.Line);
-					RunAction (ClipboardActions.Cut);
-					goto case 'i';
-						
+						InsertState (ClipboardActions.Cut);
+					}
+					return;
+											
 				case 'g':
 					Status = "g";
 					state = State.G;
@@ -520,7 +529,7 @@ namespace Mono.TextEditor.Vi
 					Caret.Line = System.Math.Max (DocumentLocation.MinLine, Editor.PointToLocation (0, Editor.LineHeight - 1).Line);
 					return;
 				case 'J':
-					RunAction (ViActions.Join);
+					RunActions (ViActions.Join);
 					return;
 				case 'L':
 					int line = Editor.PointToLocation (0, Editor.Allocation.Height - Editor.LineHeight * 2 - 2).Line;
@@ -536,7 +545,7 @@ namespace Mono.TextEditor.Vi
 					return;
 						
 				case '~':
-					RunAction (ViActions.ToggleCase);
+					RunActions (ViActions.ToggleCase);
 					return;
 						
 				case 'z':
@@ -587,7 +596,7 @@ namespace Mono.TextEditor.Vi
 				action = ViActionMaps.GetCommandCharAction ((char)unicodeKey);
 				
 			if (action != null)
-				RunAction (action);
+				RunActions (action);
 				
 			//undo/redo may leave MD with a selection mode without activating visual mode
 			CheckVisualMode ();
@@ -626,6 +635,18 @@ namespace Mono.TextEditor.Vi
 			return;
 		}
 
+		protected void InsertState (params Action<TextEditorData> [] actions)
+		{
+			ClearRecordedAction();
+			DoAction (() => {
+				RunActions (actions);
+			}, true);
+			Caret.Mode = CaretMode.Insert;
+			Status = "-- INSERT --";
+			state = State.Insert;
+			return;
+		}
+
 		protected void YankStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
 		{
 			Action<TextEditorData> action = null;
@@ -646,10 +667,10 @@ namespace Mono.TextEditor.Vi
 			}
 			
 			if (action != null) {
-				RunAction (action);
+				RunActions (action);
 				if (Data.IsSomethingSelected && !lineAction)
 					offset = Data.SelectionRange.Offset;
-				RunAction (ClipboardActions.Copy);
+				RunActions (ClipboardActions.Copy);
 				Reset (string.Empty);
 			} else {
 				Reset ("Unrecognised motion");
@@ -694,11 +715,18 @@ namespace Mono.TextEditor.Vi
 		protected void InsertReplaceStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
 		{
 			Action<TextEditorData> action = GetInsertAction (key, modifier);
-			if (action != null)
-				RunAction (action);
-			else if (unicodeKey != 0)
-				InsertCharacter (unicodeKey);
-				
+			if (action != null) {
+				DoAction (() => {
+					RunActions (action);
+				}
+				, true);
+			}
+			else if (unicodeKey != 0) {
+				DoAction(() => {
+					InsertCharacter (unicodeKey);
+				}	
+				, true);
+			}
 			return;
 		}
 
@@ -722,7 +750,7 @@ namespace Mono.TextEditor.Vi
 				action = ViActionMaps.GetCommandCharAction ((char)unicodeKey);
 			}
 			if (action != null) {
-				RunAction (SelectionActions.LineActionFromMoveAction (action));
+				RunActions (SelectionActions.LineActionFromMoveAction (action));
 				return;
 			}
 
@@ -750,7 +778,7 @@ namespace Mono.TextEditor.Vi
 				action = ViActionMaps.GetCommandCharAction ((char)unicodeKey);
 			}
 			if (action != null) {
-				RunAction (ViActions.VisualSelectionFromMoveAction (action));
+				RunActions (ViActions.VisualSelectionFromMoveAction (action));
 				return;
 			}
 
@@ -790,11 +818,13 @@ namespace Mono.TextEditor.Vi
 		protected void WriteCharStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier)
 		{
 			if (unicodeKey != 0) {
-				RunAction (SelectionActions.StartSelection);
-				int roffset = Data.SelectionRange.Offset;
-				InsertCharacter ((char)unicodeKey);
-				Reset (string.Empty);
-				Caret.Offset = roffset;
+				DoAction (() => {
+					RunActions (SelectionActions.StartSelection);
+					int roffset = Data.SelectionRange.Offset;
+					InsertCharacter ((char)unicodeKey);
+					Reset (string.Empty);
+					Caret.Offset = roffset;
+				});
 			} else {
 				Reset ("Keystroke was not a character");
 			}
@@ -804,7 +834,7 @@ namespace Mono.TextEditor.Vi
 		protected void IndentStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier,  Gdk.Key key)
 		{
 			if (((modifier & (Gdk.ModifierType.ControlMask)) == 0 && unicodeKey == '>')) {
-				RunAction (MiscActions.IndentSelection);
+				RunActions (MiscActions.IndentSelection);
 				Reset ("");
 				return;
 			}
@@ -825,7 +855,7 @@ namespace Mono.TextEditor.Vi
 		protected void UnindentStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier,  Gdk.Key key)
 		{
 			if (((modifier & (Gdk.ModifierType.ControlMask)) == 0 && ((char)unicodeKey) == '<')) {
-				RunAction (MiscActions.RemoveIndentSelection);
+				RunActions (MiscActions.RemoveIndentSelection);
 				Reset ("");
 				return;
 			}
@@ -871,7 +901,7 @@ namespace Mono.TextEditor.Vi
 				mark = new ViMark(k);
 				marks [k] = mark;
 			}
-			RunAction(mark.SaveMark);
+			RunActions(mark.SaveMark);
 			Reset("");
 			return;
 		}
@@ -914,7 +944,7 @@ namespace Mono.TextEditor.Vi
 		{
 			char k = (char)unicodeKey;
 			if (marks.ContainsKey(k)) {
-				RunAction(marks [k].LoadMark);
+				RunActions(marks [k].LoadMark);
 				Reset ("");
 			} else {
 				Reset ("Unknown Mark");
@@ -965,7 +995,7 @@ namespace Mono.TextEditor.Vi
 				}
 				
 				if (null != action) {
-					RunAction (action);
+					RunActions (action);
 					Reset (string.Empty);
 				}
 			}
@@ -1015,16 +1045,36 @@ namespace Mono.TextEditor.Vi
 			return "Performed replacement.";
 		}
 
-		public void DoAction (Action act)
+		public void DoAction (Action act, bool insertMode = false)
 		{
-			lastCommand = act;
+			if (insertMode) {
+				recordedAction = recordedAction ?? new List<Action>();
+				recordedAction.Add (act);
+			} else {
+				recordedAction = null;
+				lastCommand = act;
+			}
 			act();
 		}
 
 		public void RepeatAction ()
 		{
-			if (lastCommand != null)
-				lastCommand ();
+			if (recordedAction != null) {
+				RunActions (CaretMoveActions.Right);
+				Caret.Mode = CaretMode.Insert;
+				foreach (Action act in recordedAction) {
+					act();
+				}
+			}
+			else {
+				if (lastCommand != null)
+					lastCommand ();
+			}
+		}
+
+		public void ClearRecordedAction ()
+		{
+			recordedAction = null;
 		}
 
 		public void ApplyActionToSelection (Gdk.ModifierType modifier, uint unicodeKey)
@@ -1033,18 +1083,18 @@ namespace Mono.TextEditor.Vi
 				switch ((char)unicodeKey) {
 				case 'x':
 				case 'd':
-					RunAction (ClipboardActions.Cut);
+					RunActions (ClipboardActions.Cut);
 					Reset ("Deleted selection");
 					return;
 				case 'y':
 					int offset = Data.SelectionRange.Offset;
-					RunAction (ClipboardActions.Copy);
+					RunActions (ClipboardActions.Copy);
 					Reset ("Yanked selection");
 					Caret.Offset = offset;
 					return;
 				case 's':
 				case 'c':
-					RunAction (ClipboardActions.Cut);
+					RunActions (ClipboardActions.Cut);
 					Caret.Mode = CaretMode.Insert;
 					state = State.Insert;
 					Status = "-- INSERT --";
@@ -1054,12 +1104,12 @@ namespace Mono.TextEditor.Vi
 					goto case 'c';
 					
 				case '>':
-					RunAction (MiscActions.IndentSelection);
+					RunActions (MiscActions.IndentSelection);
 					Reset ("");
 					return;
 					
 				case '<':
-					RunAction (MiscActions.RemoveIndentSelection);
+					RunActions (MiscActions.RemoveIndentSelection);
 					Reset ("");
 					return;
 
@@ -1069,12 +1119,12 @@ namespace Mono.TextEditor.Vi
 					state = State.Command;
 					break;
 				case 'J':
-					RunAction (ViActions.Join);
+					RunActions (ViActions.Join);
 					Reset ("");
 					return;
 					
 				case '~':
-					RunAction (ViActions.ToggleCase);
+					RunActions (ViActions.ToggleCase);
 					Reset ("");
 					return;
 				}
@@ -1111,31 +1161,31 @@ namespace Mono.TextEditor.Vi
 						// Line mode paste
 						if (data.IsSomethingSelected) {
 							// Replace selection
-							RunAction (ClipboardActions.Cut);
+							RunActions (ClipboardActions.Cut);
 							data.InsertAtCaret (data.EolMarker);
 							int offset = data.Caret.Offset;
 							data.InsertAtCaret (contents);
 							if (linemode) {
 								// Existing selection was also in line mode
 								data.Caret.Offset = offset;
-								RunAction (DeleteActions.FromMoveAction (CaretMoveActions.Left));
+								RunActions (DeleteActions.FromMoveAction (CaretMoveActions.Left));
 							}
-							RunAction (CaretMoveActions.LineStart);
+							RunActions (CaretMoveActions.LineStart);
 						} else {
 							// Paste on new line
-							RunAction (ViActions.NewLineBelow);
-							RunAction (DeleteActions.FromMoveAction (CaretMoveActions.LineStart));
+							RunActions (ViActions.NewLineBelow);
+							RunActions (DeleteActions.FromMoveAction (CaretMoveActions.LineStart));
 							data.InsertAtCaret (contents);
-							RunAction (DeleteActions.FromMoveAction (CaretMoveActions.Left));
-							RunAction (CaretMoveActions.LineStart);
+							RunActions (DeleteActions.FromMoveAction (CaretMoveActions.Left));
+							RunActions (CaretMoveActions.LineStart);
 						}
 					} else {
 						// Inline paste
 						if (data.IsSomethingSelected) 
-							RunAction (ClipboardActions.Cut);
-						else RunAction (CaretMoveActions.Right);
+							RunActions (ClipboardActions.Cut);
+						else RunActions (CaretMoveActions.Right);
 						data.InsertAtCaret (contents);
-						RunAction (ViActions.Left);
+						RunActions (ViActions.Left);
 					}
 					Reset (string.Empty);
 				});
@@ -1159,30 +1209,30 @@ namespace Mono.TextEditor.Vi
 						// Line mode paste
 						if (data.IsSomethingSelected) {
 							// Replace selection
-							RunAction (ClipboardActions.Cut);
+							RunActions (ClipboardActions.Cut);
 							data.InsertAtCaret (data.EolMarker);
 							int offset = data.Caret.Offset;
 							data.InsertAtCaret (contents);
 							if (linemode) {
 								// Existing selection was also in line mode
 								data.Caret.Offset = offset;
-								RunAction (DeleteActions.FromMoveAction (CaretMoveActions.Left));
+								RunActions (DeleteActions.FromMoveAction (CaretMoveActions.Left));
 							}
-							RunAction (CaretMoveActions.LineStart);
+							RunActions (CaretMoveActions.LineStart);
 						} else {
 							// Paste on new line
-							RunAction (ViActions.NewLineAbove);
-							RunAction (DeleteActions.FromMoveAction (CaretMoveActions.LineStart));
+							RunActions (ViActions.NewLineAbove);
+							RunActions (DeleteActions.FromMoveAction (CaretMoveActions.LineStart));
 							data.InsertAtCaret (contents);
-							RunAction (DeleteActions.FromMoveAction (CaretMoveActions.Left));
-							RunAction (CaretMoveActions.LineStart);
+							RunActions (DeleteActions.FromMoveAction (CaretMoveActions.Left));
+							RunActions (CaretMoveActions.LineStart);
 						}
 					} else {
 						// Inline paste
 						if (data.IsSomethingSelected) 
-							RunAction (ClipboardActions.Cut);
+							RunActions (ClipboardActions.Cut);
 						data.InsertAtCaret (contents);
-						RunAction (ViActions.Left);
+						RunActions (ViActions.Left);
 					}
 					Reset (string.Empty);
 				});
@@ -1210,5 +1260,7 @@ namespace Mono.TextEditor.Vi
 			NameMacro,
 			PlayMacro
 		}
+
 	}
+
 }

@@ -1335,17 +1335,17 @@ namespace MonoDevelop.SourceEditor
 		
 		public void PrevBookmark ()
 		{
-			TextEditor.RunAction (BookmarkActions.GotoPrevious);
+			TextEditor.RunActions (BookmarkActions.GotoPrevious);
 		}
 		
 		public void NextBookmark ()
 		{
-			TextEditor.RunAction (BookmarkActions.GotoNext);
+			TextEditor.RunActions (BookmarkActions.GotoNext);
 		}
 
 		public void ClearBookmarks ()
 		{
-			TextEditor.RunAction (BookmarkActions.ClearAll);
+			TextEditor.RunActions (BookmarkActions.ClearAll);
 		}
 		#endregion
 		
@@ -1382,17 +1382,17 @@ namespace MonoDevelop.SourceEditor
 		
 		public void Cut ()
 		{
-			TextEditor.RunAction (ClipboardActions.Cut);
+			TextEditor.RunActions (ClipboardActions.Cut);
 		}
 		
 		public void Copy ()
 		{
-			TextEditor.RunAction (ClipboardActions.Copy);
+			TextEditor.RunActions (ClipboardActions.Copy);
 		}
 		
 		public void Paste ()
 		{
-			TextEditor.RunAction (ClipboardActions.Paste);
+			TextEditor.RunActions (ClipboardActions.Paste);
 		}
 		
 		public void Delete ()
@@ -1400,13 +1400,13 @@ namespace MonoDevelop.SourceEditor
 			if (TextEditor.IsSomethingSelected) {
 				TextEditor.DeleteSelectedText ();
 			} else {
-				TextEditor.RunAction (DeleteActions.Delete);
+				TextEditor.RunActions (DeleteActions.Delete);
 			}
 		}
 		
 		public void SelectAll ()
 		{
-			TextEditor.RunAction (SelectionActions.SelectAll);
+			TextEditor.RunActions (SelectionActions.SelectAll);
 		}
 		#endregion
 		
@@ -1964,7 +1964,7 @@ namespace MonoDevelop.SourceEditor
 		[CommandHandler (TextEditorCommands.GotoMatchingBrace)]
 		protected void OnGotoMatchingBrace ()
 		{
-			TextEditor.RunAction (MiscActions.GotoMatchingBracket);
+			TextEditor.RunActions (MiscActions.GotoMatchingBracket);
 		}
 		
 		void CorrectIndenting ()
@@ -1995,7 +1995,7 @@ namespace MonoDevelop.SourceEditor
 		protected void OnMoveBlockUp ()
 		{
 			using (var undo = TextEditor.OpenUndoGroup ()) {
-				TextEditor.RunAction (MiscActions.MoveBlockUp);
+				TextEditor.RunActions (MiscActions.MoveBlockUp);
 				CorrectIndenting ();
 			}
 		}
@@ -2004,7 +2004,7 @@ namespace MonoDevelop.SourceEditor
 		protected void OnMoveBlockDown ()
 		{
 			using (var undo = TextEditor.OpenUndoGroup ()) {
-				TextEditor.RunAction (MiscActions.MoveBlockDown);
+				TextEditor.RunActions (MiscActions.MoveBlockDown);
 				CorrectIndenting ();
 			}
 		}

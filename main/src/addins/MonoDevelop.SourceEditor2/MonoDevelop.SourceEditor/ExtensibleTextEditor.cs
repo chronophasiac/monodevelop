@@ -666,253 +666,253 @@ namespace MonoDevelop.SourceEditor
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.LineEnd)]
 		internal void OnLineEnd ()
 		{
-			RunAction (CaretMoveActions.LineEnd);
+			RunActions (CaretMoveActions.LineEnd);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.LineStart)]
 		internal void OnLineStart ()
 		{
-			RunAction (CaretMoveActions.LineHome);
+			RunActions (CaretMoveActions.LineHome);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.DeleteLeftChar)]
 		internal void OnDeleteLeftChar ()
 		{
-			RunAction (DeleteActions.Backspace);
+			RunActions (DeleteActions.Backspace);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.DeleteRightChar)]
 		internal void OnDeleteRightChar ()
 		{
-			RunAction (DeleteActions.Delete);
+			RunActions (DeleteActions.Delete);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.CharLeft)]
 		internal void OnCharLeft ()
 		{
-			RunAction (CaretMoveActions.Left);
+			RunActions (CaretMoveActions.Left);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.CharRight)]
 		internal void OnCharRight ()
 		{
-			RunAction (CaretMoveActions.Right);
+			RunActions (CaretMoveActions.Right);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.LineUp)]
 		internal void OnLineUp ()
 		{
-			RunAction (CaretMoveActions.Up);
+			RunActions (CaretMoveActions.Up);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.LineDown)]
 		internal void OnLineDown ()
 		{
-			RunAction (CaretMoveActions.Down);
+			RunActions (CaretMoveActions.Down);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.DocumentStart)]
 		internal void OnDocumentStart ()
 		{
-			RunAction (CaretMoveActions.ToDocumentStart);
+			RunActions (CaretMoveActions.ToDocumentStart);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.DocumentEnd)]
 		internal void OnDocumentEnd ()
 		{
-			RunAction (CaretMoveActions.ToDocumentEnd);
+			RunActions (CaretMoveActions.ToDocumentEnd);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.PageUp)]
 		internal void OnPageUp ()
 		{
-			RunAction (CaretMoveActions.PageUp);
+			RunActions (CaretMoveActions.PageUp);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.PageDown)]
 		internal void OnPageDown ()
 		{
-			RunAction (CaretMoveActions.PageDown);
+			RunActions (CaretMoveActions.PageDown);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.DeleteLine)]
 		internal void OnDeleteLine ()
 		{
-			RunAction (DeleteActions.CaretLine);
+			RunActions (DeleteActions.CaretLine);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.DeleteToLineEnd)]
 		internal void OnDeleteToLineEnd ()
 		{
-			RunAction (DeleteActions.CaretLineToEnd);
+			RunActions (DeleteActions.CaretLineToEnd);
 		}
 		
  		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.ScrollLineUp)]
 		internal void OnScrollLineUp ()
 		{
-			RunAction (ScrollActions.Up);
+			RunActions (ScrollActions.Up);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.ScrollLineDown)]
 		internal void OnScrollLineDown ()
 		{
-			RunAction (ScrollActions.Down);
+			RunActions (ScrollActions.Down);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.ScrollPageUp)]
 		internal void OnScrollPageUp ()
 		{
-			RunAction (ScrollActions.PageUp);
+			RunActions (ScrollActions.PageUp);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.ScrollPageDown)]
 		internal void OnScrollPageDown ()
 		{
-			RunAction (ScrollActions.PageDown);
+			RunActions (ScrollActions.PageDown);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.GotoMatchingBrace)]
 		internal void OnGotoMatchingBrace ()
 		{
-			RunAction (MiscActions.GotoMatchingBracket);
+			RunActions (MiscActions.GotoMatchingBracket);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionMoveLeft)]
 		internal void OnSelectionMoveLeft ()
 		{
-			RunAction (SelectionActions.MoveLeft);
+			RunActions (SelectionActions.MoveLeft);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionMoveRight)]
 		internal void OnSelectionMoveRight ()
 		{
-			RunAction (SelectionActions.MoveRight);
+			RunActions (SelectionActions.MoveRight);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.MovePrevWord)]
 		internal void OnMovePrevWord ()
 		{
-			RunAction (CaretMoveActions.PreviousWord);
+			RunActions (CaretMoveActions.PreviousWord);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.MoveNextWord)]
 		internal void OnMoveNextWord ()
 		{
-			RunAction (CaretMoveActions.NextWord);
+			RunActions (CaretMoveActions.NextWord);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionMovePrevWord)]
 		internal void OnSelectionMovePrevWord ()
 		{
-			RunAction (SelectionActions.MovePreviousWord);
+			RunActions (SelectionActions.MovePreviousWord);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionMoveNextWord)]
 		internal void OnSelectionMoveNextWord ()
 		{
-			RunAction (SelectionActions.MoveNextWord);
+			RunActions (SelectionActions.MoveNextWord);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.MovePrevSubword)]
 		internal void OnMovePrevSubword ()
 		{
-			RunAction (CaretMoveActions.PreviousSubword);
+			RunActions (CaretMoveActions.PreviousSubword);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.MoveNextSubword)]
 		internal void OnMoveNextSubword ()
 		{
-			RunAction (CaretMoveActions.NextSubword);
+			RunActions (CaretMoveActions.NextSubword);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionMovePrevSubword)]
 		internal void OnSelectionMovePrevSubword ()
 		{
-			RunAction (SelectionActions.MovePreviousSubword);
+			RunActions (SelectionActions.MovePreviousSubword);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionMoveNextSubword)]
 		internal void OnSelectionMoveNextSubword ()
 		{
-			RunAction (SelectionActions.MoveNextSubword);
+			RunActions (SelectionActions.MoveNextSubword);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionMoveUp)]
 		internal void OnSelectionMoveUp ()
 		{
-			RunAction (SelectionActions.MoveUp);
+			RunActions (SelectionActions.MoveUp);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionMoveDown)]
 		internal void OnSelectionMoveDown ()
 		{
-			RunAction (SelectionActions.MoveDown);
+			RunActions (SelectionActions.MoveDown);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionMoveHome)]
 		internal void OnSelectionMoveHome ()
 		{
-			RunAction (SelectionActions.MoveLineHome);
+			RunActions (SelectionActions.MoveLineHome);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionMoveEnd)]
 		internal void OnSelectionMoveEnd ()
 		{
-			RunAction (SelectionActions.MoveLineEnd);
+			RunActions (SelectionActions.MoveLineEnd);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionMoveToDocumentStart)]
 		internal void OnSelectionMoveToDocumentStart ()
 		{
-			RunAction (SelectionActions.MoveToDocumentStart);
+			RunActions (SelectionActions.MoveToDocumentStart);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.ExpandSelectionToLine)]
 		internal void OnExpandSelectionToLine ()
 		{
-			RunAction (SelectionActions.ExpandSelectionToLine);
+			RunActions (SelectionActions.ExpandSelectionToLine);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionMoveToDocumentEnd)]
 		internal void OnSelectionMoveToDocumentEnd ()
 		{
-			RunAction (SelectionActions.MoveToDocumentEnd);
+			RunActions (SelectionActions.MoveToDocumentEnd);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SwitchCaretMode)]
 		internal void OnSwitchCaretMode ()
 		{
-			RunAction (MiscActions.SwitchCaretMode);
+			RunActions (MiscActions.SwitchCaretMode);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.InsertTab)]
 		internal void OnInsertTab ()
 		{
-			RunAction (MiscActions.InsertTab);
+			RunActions (MiscActions.InsertTab);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.RemoveTab)]
 		internal void OnRemoveTab ()
 		{
-			RunAction (MiscActions.RemoveTab);
+			RunActions (MiscActions.RemoveTab);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.InsertNewLine)]
 		internal void OnInsertNewLine ()
 		{
-			RunAction (MiscActions.InsertNewLine);
+			RunActions (MiscActions.InsertNewLine);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.InsertNewLineAtEnd)]
 		internal void OnInsertNewLineAtEnd ()
 		{
-			RunAction (MiscActions.InsertNewLineAtEnd);
+			RunActions (MiscActions.InsertNewLineAtEnd);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.InsertNewLinePreserveCaretPosition)]
 		internal void OnInsertNewLinePreserveCaretPosition ()
 		{
-			RunAction (MiscActions.InsertNewLinePreserveCaretPosition);
+			RunActions (MiscActions.InsertNewLinePreserveCaretPosition);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.CompleteStatement)]
@@ -928,37 +928,37 @@ namespace MonoDevelop.SourceEditor
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.DeletePrevWord)]
 		internal void OnDeletePrevWord ()
 		{
-			RunAction (DeleteActions.PreviousWord);
+			RunActions (DeleteActions.PreviousWord);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.DeleteNextWord)]
 		internal void OnDeleteNextWord ()
 		{
-			RunAction (DeleteActions.NextWord);
+			RunActions (DeleteActions.NextWord);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.DeletePrevSubword)]
 		internal void OnDeletePrevSubword ()
 		{
-			RunAction (DeleteActions.PreviousSubword);
+			RunActions (DeleteActions.PreviousSubword);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.DeleteNextSubword)]
 		internal void OnDeleteNextSubword ()
 		{
-			RunAction (DeleteActions.NextSubword);
+			RunActions (DeleteActions.NextSubword);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionPageDownAction)]
 		internal void OnSelectionPageDownAction ()
 		{
-			RunAction (SelectionActions.MovePageDown);
+			RunActions (SelectionActions.MovePageDown);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.SelectionPageUpAction)]
 		internal void OnSelectionPageUpAction ()
 		{
-			RunAction (SelectionActions.MovePageUp);
+			RunActions (SelectionActions.MovePageUp);
 		}
 		
 		[CommandHandler (MonoDevelop.SourceEditor.SourceEditorCommands.PulseCaret)]
@@ -976,26 +976,26 @@ namespace MonoDevelop.SourceEditor
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.TransposeCharacters)]
 		internal void TransposeCharacters ()
 		{
-			RunAction (MiscActions.TransposeCharacters);
+			RunActions (MiscActions.TransposeCharacters);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.DuplicateLine)]
 		internal void DuplicateLine ()
 		{
-			RunAction (MiscActions.DuplicateLine);
+			RunActions (MiscActions.DuplicateLine);
 		}
 
 		[CommandHandler (MonoDevelop.Ide.Commands.TextEditorCommands.RecenterEditor)]
 		internal void RecenterEditor ()
 		{
-			RunAction (MiscActions.RecenterEditor);
+			RunActions (MiscActions.RecenterEditor);
 		}
 		
 		[CommandHandler (MonoDevelop.Ide.Commands.EditCommands.JoinWithNextLine)]
 		internal void JoinLines ()
 		{
 			using (var undo = Document.OpenUndoGroup ()) {
-				RunAction (Mono.TextEditor.Vi.ViActions.Join);
+				RunActions (Mono.TextEditor.Vi.ViActions.Join);
 			}
 		}
 		

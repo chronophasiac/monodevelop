@@ -188,18 +188,6 @@ namespace Mono.TextEditor
 		{
 		}
 		
-		protected void RunAction (Action<TextEditorData> action)
-		{
-			HideMouseCursor ();
-			try {
-				using (var undo = Document.OpenUndoGroup ()) {
-					action (this.textEditorData);
-				}
-			} catch (Exception e) {
-				Console.WriteLine ("Error while executing action " + action.ToString () + " :" + e);
-			}
-		}
-		
 		protected void RunActions (params Action<TextEditorData>[] actions)
 		{
 			HideMouseCursor ();
@@ -209,7 +197,7 @@ namespace Mono.TextEditor
 						action (this.textEditorData);
 				}
 			} catch (Exception e) {
-				var sb = new System.Text.StringBuilder ("Error while executing actions ");
+				var sb = new System.Text.StringBuilder ("Error while executing action(s) ");
 				foreach (var action in actions)
 					sb.AppendFormat (" {0}", action);
 				Console.WriteLine (sb.ToString () + ": " + e);
