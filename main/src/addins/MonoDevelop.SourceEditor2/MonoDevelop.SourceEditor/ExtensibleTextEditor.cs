@@ -995,7 +995,7 @@ namespace MonoDevelop.SourceEditor
 		internal void JoinLines ()
 		{
 			using (var undo = Document.OpenUndoGroup ()) {
-				RunActions (Mono.TextEditor.Vi.ViActions.Join);
+				RunActions (Mono.TextEditor.Vi.ViMotionsAndCommands.Join);
 			}
 		}
 		

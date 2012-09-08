@@ -11,36 +11,36 @@
     <RootNamespace>Mono.TextEditor</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
+    <DebugSymbols>True</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>True</Optimize>
     <OutputPath>..\..\..\build\bin</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Execution>
       <Execution clr-version="Net_2_0" />
     </Execution>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>True</Optimize>
     <OutputPath>..\..\..\build\bin</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Execution>
       <Execution clr-version="Net_2_0" />
     </Execution>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Standalone|AnyCPU' ">
     <DebugType>none</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>True</Optimize>
     <OutputPath>bin\Standalone</OutputPath>
     <DefineConstants>STANDALONE</DefineConstants>
     <WarningLevel>4</WarningLevel>
-    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Mono.Posix" />
@@ -92,7 +92,6 @@
     <Compile Include="Mono.TextEditor\EditMode.cs" />
     <Compile Include="Mono.TextEditor\SimpleEditMode.cs" />
     <Compile Include="Mono.TextEditor.Vi\ViMode.cs" />
-    <Compile Include="Mono.TextEditor.Vi\ViActions.cs" />
     <Compile Include="Mono.TextEditor.Vi\ViActionMaps.cs" />
     <Compile Include="Mono.TextEditor\HelperMethods.cs" />
     <Compile Include="Mono.TextEditor\LinkEventArgs.cs" />
@@ -203,6 +202,9 @@
     <Compile Include="Mono.TextEditor\Standalone\TextLocation.cs" />
     <Compile Include="Mono.TextEditor.Utils\RtfWriter.cs" />
     <Compile Include="Mono.TextEditor\Gui\GtkGestures.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViKeypressHandlers.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViMotions.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViCommands.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Mono.TextEditor.dll.config">

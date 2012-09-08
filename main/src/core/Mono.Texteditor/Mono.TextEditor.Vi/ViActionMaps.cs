@@ -40,10 +40,10 @@ namespace Mono.TextEditor.Vi
 			switch (c) {
 			case 'W':
 			case 'w':
-				return ViActions.WordEnd;
+				return ViMotionsAndCommands.WordEnd;
 			case 'B':
 			case 'b':
-				return ViActions.WordStart;
+				return ViMotionsAndCommands.WordStart;
 			}
 			return GetNavCharAction (c);
 		}
@@ -52,21 +52,21 @@ namespace Mono.TextEditor.Vi
 		{
 			switch (c) {
 			case 'h':
-				return ViActions.Left;
+				return ViMotionsAndCommands.Left;
 			case 'b':
 				return CaretMoveActions.PreviousSubword;
 			case 'B':
 				return CaretMoveActions.PreviousWord;
 			case 'l':
-				return ViActions.Right;
+				return ViMotionsAndCommands.Right;
 			case 'w':
 				return CaretMoveActions.NextSubword;
 			case 'W':
 				return CaretMoveActions.NextWord;
 			case 'k':
-				return ViActions.Up;
+				return ViMotionsAndCommands.Up;
 			case 'j':
-				return ViActions.Down;
+				return ViMotionsAndCommands.Down;
 			case '%':
 				return MiscActions.GotoMatchingBracket;
 			case '0':
@@ -75,13 +75,13 @@ namespace Mono.TextEditor.Vi
 			case '_':
 				return CaretMoveActions.LineFirstNonWhitespace;
 			case '$':
-				return ViActions.LineEnd;
+				return ViMotionsAndCommands.LineEnd;
 			case 'G':
 				return CaretMoveActions.ToDocumentEnd;
 			case '{':
-				return ViActions.MoveToPreviousEmptyLine;
+				return ViMotionsAndCommands.MoveToPreviousEmptyLine;
 			case '}':
-				return ViActions.MoveToNextEmptyLine;
+				return ViMotionsAndCommands.MoveToNextEmptyLine;
 			}
 			return null;
 		}
@@ -95,19 +95,19 @@ namespace Mono.TextEditor.Vi
 				switch (key) {
 				case Gdk.Key.Left:
 				case Gdk.Key.KP_Left:
-					return ViActions.Left;
+					return ViMotionsAndCommands.Left;
 					
 				case Gdk.Key.Right:
 				case Gdk.Key.KP_Right:
-					return ViActions.Right;
+					return ViMotionsAndCommands.Right;
 					
 				case Gdk.Key.Up:
 				case Gdk.Key.KP_Up:
-					return ViActions.Up;
+					return ViMotionsAndCommands.Up;
 					
 				case Gdk.Key.Down:
 				case Gdk.Key.KP_Down:
-					return ViActions.Down;
+					return ViMotionsAndCommands.Down;
 				
 				//not strictly vi, but more useful IMO
 				case Gdk.Key.KP_Home:
@@ -116,7 +116,7 @@ namespace Mono.TextEditor.Vi
 					
 				case Gdk.Key.KP_End:
 				case Gdk.Key.End:
-					return ViActions.LineEnd;
+					return ViMotionsAndCommands.LineEnd;
 
 				case Gdk.Key.Page_Up:
 				case Gdk.Key.KP_Page_Up:
