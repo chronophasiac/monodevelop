@@ -67,6 +67,11 @@ namespace Mono.TextEditor.Vi
 		{
 			this.actions[key] = (ViEditor ed) => action (ed.Data);
 		}
+
+		public void Add (ViKey key, Action<ViMotionContext> context)
+		{
+			this.actions[key] = (ViEditor ed) => context (new ViMotionContext(ed.Data));
+		}
 		
 		public void Add (ViKey key, ViBuilder builder)
 		{

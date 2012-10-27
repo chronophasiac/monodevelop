@@ -299,7 +299,36 @@ namespace Mono.TextEditor
 			}
 			
 		}
-		
+
+		public static void LineEndMotion (Vi.ViMotionContext context)
+		{
+			TextEditorData data = context.Data;
+			if (!data.Caret.PreserveSelection)
+				data.ClearSelection ();
+			var line = data.Document.GetLine (data.Caret.Line);
+			var newLocation = new DocumentLocation (data.Caret.Line, line.Length + 1);
+
+			// handle folding
+			IEnumerable<FoldSegment> foldings = data.Document.GetStartFoldings (line);
+			FoldSegment segment = null;
+			foreach (FoldSegment folding in foldings) {
+				if (folding.IsFolded && folding.Contains (data.Document.LocationToOffset (newLocation))) {
+					segment = folding;
+					break;
+				}
+			}
+			if (segment != null) 
+				newLocation = data.Document.OffsetToLocation (segment.EndLine.Offset + segment.EndColumn - 1); 
+			if (newLocation != data.Caret.Location)
+				data.Caret.Location = newLocation;
+			
+			if (data.HasIndentationTracker && data.Options.IndentStyle == IndentStyle.Virtual) {
+				int virtualIndentColumn = data.GetVirtualIndentationColumn (data.Caret.Location);
+				if (virtualIndentColumn > data.Caret.Column)
+					data.Caret.Column = virtualIndentColumn;
+			}
+			
+		}
 		public static void ToDocumentStart (TextEditorData data)
 		{
 			if (!data.Caret.PreserveSelection)

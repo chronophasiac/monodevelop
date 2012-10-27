@@ -36,7 +36,7 @@ namespace Mono.TextEditor.Vi
 	{
 		protected void NormalStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
 		{
-			Action<TextEditorData> action = null;
+			Action<ViMotionContext> context = null;
 			if (((modifier & (Gdk.ModifierType.ControlMask)) == 0)) {
 				if (key == Gdk.Key.Delete)
 					unicodeKey = 'x';
@@ -84,7 +84,7 @@ namespace Mono.TextEditor.Vi
 				case 'v':
 					Status = "-- VISUAL --";
 					state = State.Visual;
-					RunActions (ViMotionsAndCommands.VisualSelectionFromMotion (ViMotionsAndCommands.Right));
+					RunMotions (ViEditMode.VisualSelectionFromMotion (ViMotionsAndCommands.Right));
 					return;
 						
 				case 'd':
@@ -139,7 +139,7 @@ namespace Mono.TextEditor.Vi
 							RunActions (ClipboardActions.Cut);
 						}
 						);
-					ViMotionsAndCommands.RetreatFromLineEnd (Data);
+					ViEditMode.RetreatFromLineEnd (Data);
 					return;
 						
 				case 'X':
@@ -268,14 +268,14 @@ namespace Mono.TextEditor.Vi
 					
 			}
 				
-			action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-			if (action == null)
-				action = ViActionMaps.GetDirectionKeyAction (key, modifier);
-			if (action == null)
-				action = ViActionMaps.GetCommandCharAction ((char)unicodeKey);
+			context = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+			if (context == null)
+				context = ViActionMaps.GetDirectionKeyAction (key, modifier);
+			if (context == null)
+				context = ViMotionContext.ViDataToContext(ViActionMaps.GetCommandCharAction ((char)unicodeKey));
 				
-			if (action != null)
-				RunActions (action);
+			if (context != null)
+				RunMotions (context);
 				
 			//undo/redo may leave MD with a selection mode without activating visual mode
 			CheckVisualMode ();
@@ -284,26 +284,26 @@ namespace Mono.TextEditor.Vi
 
 		protected void DeleteStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
 		{
-			Action<TextEditorData> action = null;
+			Action<ViMotionContext> context = null;
 			bool lineAction = false;
 			if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0 
 				&& unicodeKey == 'd')) {
-				action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
+				context = SelectionActions.LineActionFromMotion (CaretMoveActions.LineEndMotion);
 				lineAction = true;
 			} else {
-				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-				if (action == null)
-					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
-				if (action != null)
-					action = SelectionActions.FromMoveAction (action);
+				context = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+				if (context == null)
+					context = ViActionMaps.GetDirectionKeyAction (key, modifier);
+				if (context != null)
+					context = SelectionActions.FromMotion (context);
 			}
 				
-			if (action != null) {
+			if (context != null) {
 				DoAction (() => {
 					if (lineAction)
-						RunActions (action, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
+						RunMotions (context, ViMotionContext.ViDataToContext(ClipboardActions.Cut), ViMotionContext.ViDataToContext(CaretMoveActions.LineFirstNonWhitespace));
 					else
-						RunActions (action, ClipboardActions.Cut);
+						RunMotions (context, ViMotionContext.ViDataToContext(ClipboardActions.Cut));
 				}
 				);
 				Reset ("");
@@ -328,25 +328,25 @@ namespace Mono.TextEditor.Vi
 
 		protected void YankStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
 		{
-			Action<TextEditorData> action = null;
+			Action<ViMotionContext> context = null;
 			bool lineAction = false;
 			int offset = Caret.Offset;
 			
 			if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0 
 			     && unicodeKey == 'y'))
 			{
-				action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
+				context = SelectionActions.LineActionFromMotion (CaretMoveActions.LineEndMotion);
 				lineAction	= true;
 			} else {
-				action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-				if (action == null)
-					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
-				if (action != null)
-					action = SelectionActions.FromMoveAction (action);
+				context = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+				if (context == null)
+					context = ViActionMaps.GetDirectionKeyAction (key, modifier);
+				if (context != null)
+					context = SelectionActions.FromMotion (context);
 			}
 			
-			if (action != null) {
-				RunActions (action);
+			if (context != null) {
+				RunMotions (context);
 				if (Data.IsSomethingSelected && !lineAction)
 					offset = Data.SelectionRange.Offset;
 				RunActions (ClipboardActions.Copy);
@@ -361,26 +361,26 @@ namespace Mono.TextEditor.Vi
 
 		protected void ChangeStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
 		{
-			Action<TextEditorData> action = null;
+			Action<ViMotionContext> context = null;
 			bool lineAction = false;
 			//copied from delete action
 			if (((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0 
 				&& unicodeKey == 'c')) {
-				action = SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd);
+				context = ViMotionContext.ViDataToContext(SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd));
 				lineAction = true;
 			} else {
-				action = ViActionMaps.GetEditObjectCharAction ((char)unicodeKey);
-				if (action == null)
-					action = ViActionMaps.GetDirectionKeyAction (key, modifier);
-				if (action != null)
-					action = SelectionActions.FromMoveAction (action);
+				context = ViActionMaps.GetEditObjectCharAction ((char)unicodeKey);
+				if (context == null)
+					context = ViActionMaps.GetDirectionKeyAction (key, modifier);
+				if (context != null)
+					context = SelectionActions.FromMotion(context);
 			}
 				
-			if (action != null) {
+			if (context != null) {
 				if (lineAction)
-					RunActions (action, ClipboardActions.Cut, ViMotionsAndCommands.NewLineAbove);
+					RunMotions (context, ViMotionContext.ViDataToContext(ClipboardActions.Cut), ViMotionContext.ViDataToContext(ViMotionsAndCommands.NewLineAbove));
 				else
-					RunActions (action, ClipboardActions.Cut);
+					RunMotions (context, ViMotionContext.ViDataToContext(ClipboardActions.Cut));
 				Status = "-- INSERT --";
 				state = State.Insert;
 				Caret.Mode = CaretMode.Insert;
@@ -393,10 +393,10 @@ namespace Mono.TextEditor.Vi
 
 		protected void InsertReplaceStateHandleKeypress (uint unicodeKey, Gdk.ModifierType modifier, Gdk.Key key)
 		{
-			Action<TextEditorData> action = GetInsertAction (key, modifier);
-			if (action != null) {
+			Action<ViMotionContext> context = GetInsertAction (key, modifier);
+			if (context != null) {
 				DoAction (() => {
-					RunActions (action);
+					RunMotions (context);
 				}
 				, true);
 			}
@@ -421,15 +421,15 @@ namespace Mono.TextEditor.Vi
 				PasteBefore (true);
 				return;
 			}
-			Action<TextEditorData> action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-			if (action == null) {
-				action = ViActionMaps.GetDirectionKeyAction (key, modifier);
+			Action<ViMotionContext> context = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+			if (context == null) {
+				context = ViActionMaps.GetDirectionKeyAction (key, modifier);
 			}
-			if (action == null) {
-				action = ViActionMaps.GetCommandCharAction ((char)unicodeKey);
+			if (context == null) {
+				context = ViMotionContext.ViDataToContext(ViActionMaps.GetCommandCharAction ((char)unicodeKey));
 			}
-			if (action != null) {
-				RunActions (SelectionActions.LineActionFromMoveAction (action));
+			if (context != null) {
+				RunMotions (SelectionActions.LineActionFromMotion (context));
 				return;
 			}
 
@@ -449,15 +449,15 @@ namespace Mono.TextEditor.Vi
 				PasteBefore (false);
 				return;
 			}
-			Action<TextEditorData> action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-			if (action == null) {
-				action = ViActionMaps.GetDirectionKeyAction (key, modifier);
+			Action<ViMotionContext> context = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+			if (context == null) {
+				context = ViActionMaps.GetDirectionKeyAction (key, modifier);
 			}
-			if (action == null) {
-				action = ViActionMaps.GetCommandCharAction ((char)unicodeKey);
+			if (context == null) {
+				context = ViMotionContext.ViDataToContext(ViActionMaps.GetCommandCharAction ((char)unicodeKey));
 			}
-			if (action != null) {
-				RunActions (ViMotionsAndCommands.VisualSelectionFromMotion (action));
+			if (context != null) {
+				RunMotions (ViEditMode.VisualSelectionFromMotion (context));
 				return;
 			}
 
@@ -518,12 +518,12 @@ namespace Mono.TextEditor.Vi
 				return;
 			}
 			
-			Action<TextEditorData> action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-			if (action == null)
-				action = ViActionMaps.GetDirectionKeyAction (key, modifier);
+			Action<ViMotionContext> context = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+			if (context == null)
+				context = ViActionMaps.GetDirectionKeyAction (key, modifier);
 			
-			if (action != null) {
-				RunActions (SelectionActions.FromMoveAction (action), MiscActions.IndentSelection);
+			if (context != null) {
+				RunMotions (SelectionActions.FromMotion (context), MiscActions.IndentSelectionMotion);
 				Reset ("");
 			} else {
 				Reset ("Unrecognised motion");
@@ -539,12 +539,12 @@ namespace Mono.TextEditor.Vi
 				return;
 			}
 			
-			Action<TextEditorData> action = ViActionMaps.GetNavCharAction ((char)unicodeKey);
-			if (action == null)
-				action = ViActionMaps.GetDirectionKeyAction (key, modifier);
+			Action<ViMotionContext> context = ViActionMaps.GetNavCharAction ((char)unicodeKey);
+			if (context == null)
+				context = ViActionMaps.GetDirectionKeyAction (key, modifier);
 			
-			if (action != null) {
-				RunActions (SelectionActions.FromMoveAction (action), MiscActions.RemoveIndentSelection);
+			if (context != null) {
+				RunMotions (SelectionActions.FromMotion (context), MiscActions.RemoveIndentSelectionMotion);
 				Reset ("");
 			} else {
 				Reset ("Unrecognised motion");

@@ -70,7 +70,7 @@ namespace Mono.TextEditor.Vi
 		{
 			ViEditor.SetMode (ViEditorMode.Normal);
 			SetCaretMode (CaretMode.Block, data);
-			ViMotionsAndCommands.RetreatFromLineEnd (data);
+			ViEditMode.RetreatFromLineEnd (data);
 		}
 		
 		protected override void OnRemovedFromEditor (TextEditorData data)
@@ -235,7 +235,7 @@ namespace Mono.TextEditor.Vi
 			if (state == State.Replace || state == State.Insert || state == State.Visual)
 				return;
 			else if (state == ViEditMode.State.Normal || state == ViEditMode.State.Unknown)
-				ViMotionsAndCommands.RetreatFromLineEnd (Data);
+				RetreatFromLineEnd (Data);
 			else
 				Reset ("");
 		}
@@ -269,13 +269,13 @@ namespace Mono.TextEditor.Vi
 				if (data.Caret.Column > DocumentLocation.MinColumn)
 					data.Caret.Column--;
 			}
-			ViMotionsAndCommands.RetreatFromLineEnd (data);
+			RetreatFromLineEnd (data);
 		}
 		
 		protected override void OnAddedToEditor (TextEditorData data)
 		{
 			data.Caret.Mode = CaretMode.Block;
-			ViMotionsAndCommands.RetreatFromLineEnd (data);
+			RetreatFromLineEnd (data);
 		}
 		
 		protected override void OnRemovedFromEditor (TextEditorData data)
@@ -292,7 +292,7 @@ namespace Mono.TextEditor.Vi
 			Status = status;
 		}
 		
-		protected virtual Action<TextEditorData> GetInsertAction (Gdk.Key key, Gdk.ModifierType modifier)
+		protected virtual Action<ViMotionContext> GetInsertAction (Gdk.Key key, Gdk.ModifierType modifier)
 		{
 			return ViActionMaps.GetInsertKeyAction (key, modifier) ??
 				ViActionMaps.GetDirectionKeyAction (key, modifier);
@@ -485,6 +485,58 @@ namespace Mono.TextEditor.Vi
 			}
 		}
 
+		public static Action<ViMotionContext> VisualSelectionFromMotion (Action<ViMotionContext> motion)
+		{
+			return delegate (ViMotionContext context) {
+				//get info about the old selection state
+				DocumentLocation oldCaret = context.Data.Caret.Location, oldAnchor = oldCaret, oldLead = oldCaret;
+				if (context.Data.MainSelection != null) {
+					oldLead = context.Data.MainSelection.Lead;
+					oldAnchor = context.Data.MainSelection.Anchor;
+				}
+				
+				//do the action, preserving selection
+				SelectionActions.StartSelection (context.Data);
+				motion (context);
+				SelectionActions.EndSelection (context.Data);
+				
+				DocumentLocation newCaret = context.Data.Caret.Location, newAnchor = newCaret, newLead = newCaret;
+				if (context.Data.MainSelection != null) {
+					newLead = context.Data.MainSelection.Lead;
+					newAnchor = context.Data.MainSelection.Anchor;
+				}
+				
+				//Console.WriteLine ("oc{0}:{1} oa{2}:{3} ol{4}:{5}", oldCaret.Line, oldCaret.Column, oldAnchor.Line, oldAnchor.Column, oldLead.Line, oldLead.Column);
+				//Console.WriteLine ("nc{0}:{1} na{2}:{3} nl{4}:{5}", newCaret.Line, newCaret.Line, newAnchor.Line, newAnchor.Column, newLead.Line, newLead.Column);
+				
+				//pivot the anchor around the anchor character
+				if (oldAnchor < oldLead && newAnchor >= newLead) {
+					context.Data.SetSelection (new DocumentLocation (newAnchor.Line, newAnchor.Column + 1), newLead);
+				} else if (oldAnchor > oldLead && newAnchor <= newLead) {
+					context.Data.SetSelection (new DocumentLocation (newAnchor.Line, newAnchor.Column - 1), newLead);
+				}
+				
+				//pivot the lead about the anchor character
+				if (newAnchor == newLead) {
+					if (oldAnchor < oldLead)
+						SelectionActions.FromMotion (ViMotionsAndCommands.Left) (context);
+					else
+						SelectionActions.FromMotion (ViMotionsAndCommands.Right) (context);
+				}
+				//pivot around the anchor line
+				else {
+					if (oldAnchor < oldLead && newAnchor > newLead && (
+							(newLead.Line == newAnchor.Line && oldLead.Line == oldAnchor.Line + 1) ||
+						    (newLead.Line == newAnchor.Line - 1 && oldLead.Line == oldAnchor.Line)))
+						SelectionActions.FromMotion (ViMotionsAndCommands.Left) (context);
+					else if (oldAnchor > oldLead && newAnchor < newLead && (
+							(newLead.Line == newAnchor.Line && oldLead.Line == oldAnchor.Line - 1) ||
+							(newLead.Line == newAnchor.Line + 1 && oldLead.Line == oldAnchor.Line)))
+						SelectionActions.FromMotion (ViMotionsAndCommands.Right) (context);
+				}
+			};
+		}
+
 		private string Search()
 		{
 			SearchResult result = searchBackward?
@@ -496,6 +548,21 @@ namespace Mono.TextEditor.Vi
 			else Caret.Offset = result.Offset;
 		
 			return string.Empty;
+		}
+		
+		internal static bool IsEol (char c)
+		{
+			return (c == '\r' || c == '\n');
+		}
+		
+		internal static void RetreatFromLineEnd (TextEditorData data)
+		{
+			if (data.Caret.Mode == CaretMode.Block && !data.IsSomethingSelected && !data.Caret.PreserveSelection) {
+				while (DocumentLocation.MinColumn < data.Caret.Column && (data.Caret.Offset >= data.Document.TextLength
+				                                 || IsEol (data.Document.GetCharAt (data.Caret.Offset)))) {
+					ViMotionsAndCommands.Left (new ViMotionContext(data));
+				}
+			}
 		}
 
 		/// <summary>
@@ -539,7 +606,7 @@ namespace Mono.TextEditor.Vi
 							RunActions (ClipboardActions.Cut);
 						else RunActions (CaretMoveActions.Right);
 						data.InsertAtCaret (contents);
-						RunActions (ViMotionsAndCommands.Left);
+						RunMotions (ViMotionsAndCommands.Left);
 					}
 					Reset (string.Empty);
 				});
@@ -586,7 +653,7 @@ namespace Mono.TextEditor.Vi
 						if (data.IsSomethingSelected) 
 							RunActions (ClipboardActions.Cut);
 						data.InsertAtCaret (contents);
-						RunActions (ViMotionsAndCommands.Left);
+						RunMotions (ViMotionsAndCommands.Left);
 					}
 					Reset (string.Empty);
 				});

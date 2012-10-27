@@ -29,6 +29,7 @@
 using System;
 using System.Text.RegularExpressions;
 using Mono.TextEditor;
+using Mono.TextEditor.Vi;
 using MonoDevelop.Ide.Gui;
 using MonoDevelop.Ide;
 
@@ -68,14 +69,14 @@ namespace MonoDevelop.SourceEditor
 			}
 		}
 		
-		protected override Action<TextEditorData> GetInsertAction (Gdk.Key key, Gdk.ModifierType modifier)
+		protected override Action<ViMotionContext> GetInsertAction (Gdk.Key key, Gdk.ModifierType modifier)
 		{
 			if (modifier == Gdk.ModifierType.None) {
 				switch (key) {
 				case Gdk.Key.BackSpace:
-					return EditActions.AdvancedBackspace;
+					return ViMotionContext.ViDataToContext(EditActions.AdvancedBackspace);
 				case Gdk.Key.Tab:
-					return tabAction.Action;
+					return ViMotionContext.ViDataToContext(tabAction.Action);
 				}
 			}
 			return base.GetInsertAction (key, modifier);

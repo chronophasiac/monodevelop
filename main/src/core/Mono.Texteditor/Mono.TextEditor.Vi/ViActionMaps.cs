@@ -35,7 +35,7 @@ namespace Mono.TextEditor.Vi
 	public static class ViActionMaps
 	{
 	
-		public static Action<TextEditorData> GetEditObjectCharAction (char c)
+		public static Action<ViMotionContext> GetEditObjectCharAction (char c)
 		{
 			switch (c) {
 			case 'W':
@@ -48,36 +48,36 @@ namespace Mono.TextEditor.Vi
 			return GetNavCharAction (c);
 		}
 		
-		public static Action<TextEditorData> GetNavCharAction (char c)
+		public static Action<ViMotionContext> GetNavCharAction (char c)
 		{
 			switch (c) {
 			case 'h':
 				return ViMotionsAndCommands.Left;
 			case 'b':
-				return CaretMoveActions.PreviousSubword;
+				return ViMotionContext.ViDataToContext(CaretMoveActions.PreviousSubword);
 			case 'B':
-				return CaretMoveActions.PreviousWord;
+				return ViMotionContext.ViDataToContext(CaretMoveActions.PreviousWord);
 			case 'l':
 				return ViMotionsAndCommands.Right;
 			case 'w':
-				return CaretMoveActions.NextSubword;
+				return ViMotionContext.ViDataToContext(CaretMoveActions.NextSubword);
 			case 'W':
-				return CaretMoveActions.NextWord;
+				return ViMotionContext.ViDataToContext(CaretMoveActions.NextWord);
 			case 'k':
 				return ViMotionsAndCommands.Up;
 			case 'j':
 				return ViMotionsAndCommands.Down;
 			case '%':
-				return MiscActions.GotoMatchingBracket;
+				return ViMotionContext.ViDataToContext(MiscActions.GotoMatchingBracket);
 			case '0':
-				return CaretMoveActions.LineStart;
+				return ViMotionContext.ViDataToContext(CaretMoveActions.LineStart);
 			case '^':
 			case '_':
-				return CaretMoveActions.LineFirstNonWhitespace;
+				return ViMotionContext.ViDataToContext(CaretMoveActions.LineFirstNonWhitespace);
 			case '$':
 				return ViMotionsAndCommands.LineEnd;
 			case 'G':
-				return CaretMoveActions.ToDocumentEnd;
+				return ViMotionContext.ViDataToContext(CaretMoveActions.ToDocumentEnd);
 			case '{':
 				return ViMotionsAndCommands.MoveToPreviousEmptyLine;
 			case '}':
@@ -86,7 +86,7 @@ namespace Mono.TextEditor.Vi
 			return null;
 		}
 		
-		public static Action<TextEditorData> GetDirectionKeyAction (Gdk.Key key, Gdk.ModifierType modifier)
+		public static Action<ViMotionContext> GetDirectionKeyAction (Gdk.Key key, Gdk.ModifierType modifier)
 		{
 			//
 			// NO MODIFIERS
@@ -112,7 +112,7 @@ namespace Mono.TextEditor.Vi
 				//not strictly vi, but more useful IMO
 				case Gdk.Key.KP_Home:
 				case Gdk.Key.Home:
-					return CaretMoveActions.LineHome;
+					return ViMotionContext.ViDataToContext(CaretMoveActions.LineHome);
 					
 				case Gdk.Key.KP_End:
 				case Gdk.Key.End:
@@ -120,11 +120,11 @@ namespace Mono.TextEditor.Vi
 
 				case Gdk.Key.Page_Up:
 				case Gdk.Key.KP_Page_Up:
-					return CaretMoveActions.PageUp;
+					return ViMotionContext.ViDataToContext(CaretMoveActions.PageUp);
 
 				case Gdk.Key.Page_Down:
 				case Gdk.Key.KP_Page_Down:
-					return CaretMoveActions.PageDown;
+					return ViMotionContext.ViDataToContext(CaretMoveActions.PageDown);
 				}
 			}
 			//
@@ -136,40 +136,40 @@ namespace Mono.TextEditor.Vi
 				switch (key) {
 				case Gdk.Key.Left:
 				case Gdk.Key.KP_Left:
-					return CaretMoveActions.PreviousWord;
+					return ViMotionContext.ViDataToContext(CaretMoveActions.PreviousWord);
 					
 				case Gdk.Key.Right:
 				case Gdk.Key.KP_Right:
-					return CaretMoveActions.NextWord;
+					return ViMotionContext.ViDataToContext(CaretMoveActions.NextWord);
 					
 				case Gdk.Key.Up:
 				case Gdk.Key.KP_Up:
-					return ScrollActions.Up;
+					return ViMotionContext.ViDataToContext(ScrollActions.Up);
 					
 				// usually bound at IDE level
 				case Gdk.Key.u:
-					return CaretMoveActions.PageUp;
+					return ViMotionContext.ViDataToContext(CaretMoveActions.PageUp);
 					
 				case Gdk.Key.Down:
 				case Gdk.Key.KP_Down:
-					return ScrollActions.Down;
+					return ViMotionContext.ViDataToContext(ScrollActions.Down);
 					
 				case Gdk.Key.d:
-					return CaretMoveActions.PageDown;
+					return ViMotionContext.ViDataToContext(CaretMoveActions.PageDown);
 				
 				case Gdk.Key.KP_Home:
 				case Gdk.Key.Home:
-					return CaretMoveActions.ToDocumentStart;
+					return ViMotionContext.ViDataToContext(CaretMoveActions.ToDocumentStart);
 					
 				case Gdk.Key.KP_End:
 				case Gdk.Key.End:
-					return CaretMoveActions.ToDocumentEnd;
+					return ViMotionContext.ViDataToContext(CaretMoveActions.ToDocumentEnd);
 				}
 			}
 			return null;
 		}
 		
-		public static Action<TextEditorData> GetInsertKeyAction (Gdk.Key key, Gdk.ModifierType modifier)
+		public static Action<ViMotionContext> GetInsertKeyAction (Gdk.Key key, Gdk.ModifierType modifier)
 		{
 			//
 			// NO MODIFIERS
@@ -177,21 +177,21 @@ namespace Mono.TextEditor.Vi
 			if ((modifier & (Gdk.ModifierType.ShiftMask | Gdk.ModifierType.ControlMask)) == 0) {
 				switch (key) {
 				case Gdk.Key.Tab:
-					return MiscActions.InsertTab;
+					return ViMotionContext.ViDataToContext(MiscActions.InsertTab);
 					
 				case Gdk.Key.Return:
 				case Gdk.Key.KP_Enter:
-					return MiscActions.InsertNewLine;
+					return ViMotionContext.ViDataToContext(MiscActions.InsertNewLine);
 					
 				case Gdk.Key.BackSpace:
-					return DeleteActions.Backspace;
+					return ViMotionContext.ViDataToContext(DeleteActions.Backspace);
 					
 				case Gdk.Key.Delete:
 				case Gdk.Key.KP_Delete:
-					return DeleteActions.Delete;
+					return ViMotionContext.ViDataToContext(DeleteActions.Delete);
 					
 				case Gdk.Key.Insert:
-					return MiscActions.SwitchCaretMode;
+					return ViMotionContext.ViDataToContext(MiscActions.SwitchCaretMode);
 				}
 			}
 			//
@@ -202,11 +202,11 @@ namespace Mono.TextEditor.Vi
 			{
 				switch (key) {
 				case Gdk.Key.BackSpace:
-					return DeleteActions.PreviousWord;
+					return ViMotionContext.ViDataToContext(DeleteActions.PreviousWord);
 					
 				case Gdk.Key.Delete:
 				case Gdk.Key.KP_Delete:
-					return DeleteActions.NextWord;
+					return ViMotionContext.ViDataToContext(DeleteActions.NextWord);
 				}
 			}
 			//
@@ -217,14 +217,14 @@ namespace Mono.TextEditor.Vi
 			{
 				switch (key) {
 				case Gdk.Key.Tab:
-					return MiscActions.RemoveTab;
+					return ViMotionContext.ViDataToContext(MiscActions.RemoveTab);
 					
 				case Gdk.Key.BackSpace:
-					return DeleteActions.Backspace;
+					return ViMotionContext.ViDataToContext(DeleteActions.Backspace);
 
 				case Gdk.Key.Return:
 				case Gdk.Key.KP_Enter:
-					return MiscActions.InsertNewLine;
+					return ViMotionContext.ViDataToContext(MiscActions.InsertNewLine);
 				}
 			}
 			return null;

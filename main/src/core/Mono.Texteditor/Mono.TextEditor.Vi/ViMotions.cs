@@ -35,171 +35,105 @@ namespace Mono.TextEditor.Vi
 	
 	public partial class ViMotionsAndCommands
 	{
-		public static void MoveToNextEmptyLine (TextEditorData data)
+		public static void MoveToNextEmptyLine (ViMotionContext context)
 		{
-			if (data.Caret.Line == data.Document.LineCount) {
-				data.Caret.Offset = data.Document.TextLength;
+			if (context.Data.Caret.Line == context.Data.Document.LineCount) {
+				context.Data.Caret.Offset = context.Data.Document.TextLength;
 				return;
 			}
 			
-			int line = data.Caret.Line + 1;
-			DocumentLine currentLine = data.Document.GetLine (line);
-			while (line <= data.Document.LineCount) {
+			int line = context.Data.Caret.Line + 1;
+			DocumentLine currentLine = context.Data.Document.GetLine (line);
+			while (line <= context.Data.Document.LineCount) {
 				line++;
-				DocumentLine nextLine = data.Document.GetLine (line);
+				DocumentLine nextLine = context.Data.Document.GetLine (line);
 				if (currentLine.Length != 0 && nextLine.Length == 0) {
-					data.Caret.Offset = nextLine.Offset;
+					context.Data.Caret.Offset = nextLine.Offset;
 					return;
 				}
 				currentLine = nextLine;
 			}
 			
-			data.Caret.Offset = currentLine.Offset;
+			context.Data.Caret.Offset = currentLine.Offset;
 		}
 		
-		public static void MoveToPreviousEmptyLine (TextEditorData data)
+		public static void MoveToPreviousEmptyLine (ViMotionContext context)
 		{
-			if (data.Caret.Line == DocumentLocation.MinLine) {
-				data.Caret.Offset = 0;
+			if (context.Data.Caret.Line == DocumentLocation.MinLine) {
+				context.Data.Caret.Offset = 0;
 				return;
 			}
 			
-			int line = data.Caret.Line - 1;
-			DocumentLine currentLine = data.Document.GetLine (line);
+			int line = context.Data.Caret.Line - 1;
+			DocumentLine currentLine = context.Data.Document.GetLine (line);
 			while (line > DocumentLocation.MinLine) {
 				line--;
-				DocumentLine previousLine = data.Document.GetLine (line);
+				DocumentLine previousLine = context.Data.Document.GetLine (line);
 				if (currentLine.Length != 0 && previousLine.Length == 0) {
-					data.Caret.Offset = previousLine.Offset;
+					context.Data.Caret.Offset = previousLine.Offset;
 					return;
 				}
 				currentLine = previousLine;
 			}
 			
-			data.Caret.Offset = currentLine.Offset;
+			context.Data.Caret.Offset = currentLine.Offset;
 		}
 		
-		public static void Right (TextEditorData data)
+		public static void Right (ViMotionContext context)
 		{
-			DocumentLine segment = data.Document.GetLine (data.Caret.Line);
-			if (segment.EndOffsetIncludingDelimiter-1 > data.Caret.Offset) {
-				CaretMoveActions.Right (data);
-				RetreatFromLineEnd (data);
+			DocumentLine segment = context.Data.Document.GetLine (context.Data.Caret.Line);
+			if (segment.EndOffsetIncludingDelimiter-1 > context.Data.Caret.Offset) {
+				CaretMoveActions.Right (context.Data);
+				ViEditMode.RetreatFromLineEnd (context.Data);
 			}
 		}
 		
-		public static void Left (TextEditorData data)
+		public static void Left (ViMotionContext context)
 		{
-			if (DocumentLocation.MinColumn < data.Caret.Column) {
-				CaretMoveActions.Left (data);
+			if (DocumentLocation.MinColumn < context.Data.Caret.Column) {
+				CaretMoveActions.Left (context.Data);
 			}
 		}
 		
-		public static void Down (TextEditorData data)
+		public static void Down (ViMotionContext context)
 		{
-			int desiredColumn = System.Math.Max (data.Caret.Column, data.Caret.DesiredColumn);
+			int desiredColumn = System.Math.Max (context.Data.Caret.Column, context.Data.Caret.DesiredColumn);
 			
-			CaretMoveActions.Down (data);
-			RetreatFromLineEnd (data);
+			CaretMoveActions.Down (context.Data);
+			ViEditMode.RetreatFromLineEnd (context.Data);
 			
-			data.Caret.DesiredColumn = desiredColumn;
+			context.Data.Caret.DesiredColumn = desiredColumn;
 		}
 		
-		public static void Up (TextEditorData data)
+		public static void Up (ViMotionContext context)
 		{
-			int desiredColumn = System.Math.Max (data.Caret.Column, data.Caret.DesiredColumn);
+			int desiredColumn = System.Math.Max (context.Data.Caret.Column, context.Data.Caret.DesiredColumn);
 			
-			CaretMoveActions.Up (data);
-			RetreatFromLineEnd (data);
+			CaretMoveActions.Up (context.Data);
+			ViEditMode.RetreatFromLineEnd (context.Data);
 			
-			data.Caret.DesiredColumn = desiredColumn;
+			context.Data.Caret.DesiredColumn = desiredColumn;
 		}
 		
-		public static void WordEnd (TextEditorData data)
+		public static void WordEnd (ViMotionContext context)
 		{
-			data.Caret.Offset = data.FindCurrentWordEnd (data.Caret.Offset);
+			context.Data.Caret.Offset = context.Data.FindCurrentWordEnd (context.Data.Caret.Offset);
 		}
 		
-		public static void WordStart (TextEditorData data)
+		public static void WordStart (ViMotionContext context)
 		{
-			data.Caret.Offset = data.FindCurrentWordStart (data.Caret.Offset);
+			context.Data.Caret.Offset = context.Data.FindCurrentWordStart (context.Data.Caret.Offset);
 		}
 		
-		public static void LineEnd (TextEditorData data)
+		public static void LineEnd (ViMotionContext context)
 		{
-			int desiredColumn = System.Math.Max (data.Caret.Column, data.Caret.DesiredColumn);
+			int desiredColumn = System.Math.Max (context.Data.Caret.Column, context.Data.Caret.DesiredColumn);
 			
-			CaretMoveActions.LineEnd (data);
-			RetreatFromLineEnd (data);
+			CaretMoveActions.LineEnd (context.Data);
+			ViEditMode.RetreatFromLineEnd (context.Data);
 			
-			data.Caret.DesiredColumn = desiredColumn;
+			context.Data.Caret.DesiredColumn = desiredColumn;
 		}
-		
-		internal static bool IsEol (char c)
-		{
-			return (c == '\r' || c == '\n');
-		}
-		
-		internal static void RetreatFromLineEnd (TextEditorData data)
-		{
-			if (data.Caret.Mode == CaretMode.Block && !data.IsSomethingSelected && !data.Caret.PreserveSelection) {
-				while (DocumentLocation.MinColumn < data.Caret.Column && (data.Caret.Offset >= data.Document.TextLength
-				                                 || IsEol (data.Document.GetCharAt (data.Caret.Offset)))) {
-					Left (data);
-				}
-			}
-		}
-		
-		public static Action<TextEditorData> VisualSelectionFromMotion (Action<TextEditorData> motion)
-		{
-			return delegate (TextEditorData data) {
-				//get info about the old selection state
-				DocumentLocation oldCaret = data.Caret.Location, oldAnchor = oldCaret, oldLead = oldCaret;
-				if (data.MainSelection != null) {
-					oldLead = data.MainSelection.Lead;
-					oldAnchor = data.MainSelection.Anchor;
-				}
-				
-				//do the action, preserving selection
-				SelectionActions.StartSelection (data);
-				motion (data);
-				SelectionActions.EndSelection (data);
-				
-				DocumentLocation newCaret = data.Caret.Location, newAnchor = newCaret, newLead = newCaret;
-				if (data.MainSelection != null) {
-					newLead = data.MainSelection.Lead;
-					newAnchor = data.MainSelection.Anchor;
-				}
-				
-				//Console.WriteLine ("oc{0}:{1} oa{2}:{3} ol{4}:{5}", oldCaret.Line, oldCaret.Column, oldAnchor.Line, oldAnchor.Column, oldLead.Line, oldLead.Column);
-				//Console.WriteLine ("nc{0}:{1} na{2}:{3} nl{4}:{5}", newCaret.Line, newCaret.Line, newAnchor.Line, newAnchor.Column, newLead.Line, newLead.Column);
-				
-				//pivot the anchor around the anchor character
-				if (oldAnchor < oldLead && newAnchor >= newLead) {
-					data.SetSelection (new DocumentLocation (newAnchor.Line, newAnchor.Column + 1), newLead);
-				} else if (oldAnchor > oldLead && newAnchor <= newLead) {
-					data.SetSelection (new DocumentLocation (newAnchor.Line, newAnchor.Column - 1), newLead);
-				}
-				
-				//pivot the lead about the anchor character
-				if (newAnchor == newLead) {
-					if (oldAnchor < oldLead)
-						SelectionActions.FromMoveAction (Left) (data);
-					else
-						SelectionActions.FromMoveAction (Right) (data);
-				}
-				//pivot around the anchor line
-				else {
-					if (oldAnchor < oldLead && newAnchor > newLead && (
-							(newLead.Line == newAnchor.Line && oldLead.Line == oldAnchor.Line + 1) ||
-						    (newLead.Line == newAnchor.Line - 1 && oldLead.Line == oldAnchor.Line)))
-						SelectionActions.FromMoveAction (Left) (data);
-					else if (oldAnchor > oldLead && newAnchor < newLead && (
-							(newLead.Line == newAnchor.Line && oldLead.Line == oldAnchor.Line - 1) ||
-							(newLead.Line == newAnchor.Line + 1 && oldLead.Line == oldAnchor.Line)))
-						SelectionActions.FromMoveAction (Right) (data);
-				}
-			};
-		}
+
 	}
 }

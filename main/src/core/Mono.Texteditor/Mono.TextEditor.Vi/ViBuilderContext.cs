@@ -305,7 +305,7 @@ namespace Mono.TextEditor.Vi
 		static bool OpenAbove (ViBuilderContext ctx)
 		{
 			// FIXME: this doesn't work correctly on the first line
-			ctx.RunActions ((ViEditor e) => ViMotionsAndCommands.Up (e.Data));
+			ctx.RunActions ((ViEditor e) => ViMotionsAndCommands.Up (new ViMotionContext(e.Data)));
 			return Open (ctx);
 		}
 	}
