@@ -6,8 +6,8 @@
        url         = "http://monodevelop.com/"
        description = "Support for ASP.NET MVC projects."
        category    = "Web Development"
-       version     = "3.1.0">
-	
+       version     = "3.0.5">
+
 	<Runtime>
 		<Import file = "Templates/Controller.xft.xml"/>
 		<Import file = "Templates/ViewPage.xft.xml"/>
@@ -19,7 +19,6 @@
 		<Import file = "Templates/GlobalAsax.xft.xml"/>
 		<Import file = "Templates/WebConfigApp.xft.xml"/>
 		<Import file = "Templates/WebConfigViews.xft.xml"/>
-		<Import file = "CodeTemplates/AddView/Empty.tt" />
 		<Import file = "Templates/ProjectMvc3.xpt.xml" />
 		<Import file = "Templates/EmptyProjectMvc3.xpt.xml" />
 		<Import file = "Templates/GlobalAsaxMvc3.xft.xml" />
@@ -32,17 +31,21 @@
 		<Import file = "Templates/LayoutPage.xft.xml" />
 		<Import file = "Templates/ViewPageRazor.xft.xml" />
 		<Import file = "Templates/PartialViewPageRazor.xft.xml" />
+		<Import file = "CodeTemplates/CSharp/AddView/Aspx/Empty.tt" />
+		<Import file = "CodeTemplates/CSharp/AddView/Razor/Empty.tt" />
+		<Import file = "CodeTemplates/CSharp/AddController/Empty.tt" />
+		<Import file = "CodeTemplates/CSharp/AddController/ControllerWithEmptyReadAndWriteActions.tt" />
 	</Runtime>
-	
+
 	<Dependencies>
-		<Addin id="Core" version="3.1.0"/>
-		<Addin id="Ide" version="3.1.0"/>
-		<Addin id="XmlEditor" version="3.1.0" />
-		<Addin id="AspNet" version="3.1.0" />
-		<Addin id="SourceEditor2" version="3.1.0" />
-		<Addin id="TextTemplating" version="3.1.0" />
+		<Addin id="Core" version="3.0.5"/>
+		<Addin id="Ide" version="3.0.5"/>
+		<Addin id="XmlEditor" version="3.0.5" />
+		<Addin id="AspNet" version="3.0.5" />
+		<Addin id="SourceEditor2" version="3.0.5" />
+		<Addin id="TextTemplating" version="3.0.5" />
 	</Dependencies>
-	
+
 	<Extension path = "/MonoDevelop/ProjectModel/MSBuildItemTypes">
 		<DotNetProjectSubtype
 			guid="{603c0e0b-db56-11dc-be95-000d561079b0}"
@@ -59,6 +62,11 @@
 			type="MonoDevelop.AspNet.Mvc.AspMvc3Project"
 			insertbefore="MonoDevelop.AspNet.AspNetAppProject"
 			/>
+		<DotNetProjectSubtype
+			guid="{E3E379DF-F4C6-4180-9B81-6769533ABE47}"
+			type="MonoDevelop.AspNet.Mvc.AspMvc4Project"
+			insertbefore="MonoDevelop.AspNet.AspNetAppProject"
+			/>	
 	</Extension>
 
 	<Extension path = "/MonoDevelop/Ide/FileTemplates">
@@ -104,18 +112,19 @@
 		<ProjectTemplate id = "AspMvc3Project-RazorWithUnitTest" file = "Templates/ProjectMvc3RazorWithUnitTest.xpt.xml" />
 	</Condition>
 	</Extension>
-	
+
 	<Extension path = "/MonoDevelop/ProjectModel/ProjectBindings">
 		<ProjectBinding id = "AspNetMvc1" class = "MonoDevelop.AspNet.Mvc.AspMvc1ProjectBinding" />
 		<ProjectBinding id = "AspNetMvc2" class = "MonoDevelop.AspNet.Mvc.AspMvc2ProjectBinding" />
 		<ProjectBinding id = "AspNetMvc3" class = "MonoDevelop.AspNet.Mvc.AspMvc3ProjectBinding" />
+		<ProjectBinding id = "AspNetMvc4" class = "MonoDevelop.AspNet.Mvc.AspMvc4ProjectBinding" />
 	</Extension>
-	
+
 	<Extension path = "/MonoDevelop/ProjectModel/SerializableClasses">
 		<DataType class = "MonoDevelop.AspNet.Mvc.AspMvcProject" />
 		<DataType class = "MonoDevelop.AspNet.Mvc.AspMvcProjectConfiguration" />
 	</Extension>
-	
+
 	<Extension path = "/MonoDevelop/Ide/Commands">
 		<Category _name = "ASP.NET" id = "AspNet">
 		<Command id = "MonoDevelop.AspNet.Mvc.AspMvcCommands.AddController"
@@ -126,6 +135,21 @@
 		         _description = "Add an ASP.NET MVC view" />
 		</Category>
 	</Extension>
+
+	<Extension path = "/MonoDevelop/Ide/Commands/TextEditor">
+		<Command id = "MonoDevelop.AspNet.Mvc.AspCommands.GoToView"
+				_label = "Go To View"
+				defaultHandler = "MonoDevelop.AspNet.Mvc.GoToViewCommandHandler"
+				description = "Go to the corresponding view file" />
+		<Command id = "MonoDevelop.AspNet.Mvc.AspCommands.AddViewFromController"
+				_label = "Add View..."
+				defaultHandler = "MonoDevelop.AspNet.Mvc.AddViewFromControllerCommandHandler"
+				description = "Add an ASP.NET MVC view" />
+		<Command id = "MonoDevelop.AspNet.Mvc.AspCommands.GoToController"
+				_label = "Go To Controller"
+				defaultHandler = "MonoDevelop.AspNet.Mvc.GoToControllerCommandHandler"
+				description = "Go to the corresponding controller file" />
+	</Extension>
 	
 	<Extension path = "/MonoDevelop/Ide/ContextMenu/ProjectPad/Add">
 		<Condition id="activeproject" value="AspNetMvc">
@@ -134,8 +158,54 @@
 			<SeparatorItem id = "MvcAddSeparator" />
 		</Condition>
 	</Extension>
+
+	<Extension path = "/MonoDevelop/SourceEditor2/ContextMenu/Editor">
+		<Condition id="FileType" fileExtensions=".cs">
+			<CommandItem id = "MonoDevelop.AspNet.Mvc.AspCommands.GoToView" insertbefore="MonoDevelop.Ide.Commands.EditCommands.Cut" />
+			<CommandItem id = "MonoDevelop.AspNet.Mvc.AspCommands.AddViewFromController" />
+			<SeparatorItem id = "MvcSeparator1" />
+		</Condition>
+		<Condition id="FileType" fileExtensions=".cshtml,.aspx">
+			<CommandItem id = "MonoDevelop.AspNet.Mvc.AspCommands.GoToController" insertbefore="MonoDevelop.Ide.Commands.EditCommands.Cut" />
+			<SeparatorItem id = "MvcSeparator2" />
+		</Condition>
+	</Extension>
 	
 	<Extension path = "/MonoDevelop/Ide/Pads/ProjectPad">
 		<NodeBuilder id="AspMvcFolderNodeBuilderExtension" class = "MonoDevelop.AspNet.Mvc.Gui.FolderNodeBuilderExtension"/>
+	</Extension>
+
+	<Extension path = "/MonoDevelop/TypeSystem/Parser">
+		<Parser class = "MonoDevelop.AspNet.Mvc.Parser.RazorCSharpParser" mimeType="text/x-cshtml" />
+	</Extension>
+
+	<ExtensionPoint path = "/MonoDevelop/Razor/CompletionBuilders">
+		<ExtensionNode name="Class" />
+	</ExtensionPoint>
+
+	<Extension path = "/MonoDevelop/Razor/CompletionBuilders">
+		<Class class = "MonoDevelop.AspNet.Mvc.Completion.RazorCSharpCompletionBuilder" />
+	</Extension>
+
+	<Extension path = "/MonoDevelop/Core/MimeTypes">
+		<MimeType id="text/x-cshtml" _description="ASP.NET MVC Razor View" icon="md-html-file-icon" isText="true">
+			<File pattern="*.cshtml" />
+		</MimeType>
+	</Extension>
+
+	<Extension path = "/MonoDevelop/SourceEditor2/CustomModes">
+		<SyntaxMode mimeTypes="text/x-cshtml" class="MonoDevelop.AspNet.Mvc.RazorSyntaxMode"/>
+	</Extension>
+
+	<Extension path = "/MonoDevelop/Ide/TextEditorExtensions">
+		<Class fileExtensions=".cshtml" class = "MonoDevelop.AspNet.Mvc.Gui.RazorCSharpEditorExtension" />
+	</Extension>
+
+	<Extension path = "/MonoDevelop/Ide/CodeTemplates">
+		<CodeTemplate file="Razor-templates.xml" />
+	</Extension>
+
+	<Extension path = "/MonoDevelop/Ide/CodeFormatters">
+		<Formatter mimeType="text/x-cshtml" class="MonoDevelop.AspNet.Mvc.Formatting.RazorCSharpFormatter" />
 	</Extension>
 </Addin>

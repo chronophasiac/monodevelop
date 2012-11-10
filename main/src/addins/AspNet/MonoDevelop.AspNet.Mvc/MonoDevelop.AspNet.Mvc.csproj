@@ -34,7 +34,21 @@
     <Compile Include="AspMvcProject.cs" />
     <Compile Include="AspMvcProjectConfiguration.cs" />
     <Compile Include="AspMvcCommands.cs" />
+    <Compile Include="CommandHandlers.cs" />
+    <Compile Include="Completion\IRazorCompletionBuilder.cs" />
+    <Compile Include="Completion\RazorCompletion.cs" />
+    <Compile Include="Completion\RazorCSharpCompletionBuilder.cs" />
+    <Compile Include="Formatting\RazorCSharpFormatter.cs" />
     <Compile Include="Gui\FolderNodeBuilderExtension.cs" />
+    <None Include="CodeTemplates\CSharp\AddController\ControllerWithEmptyReadAndWriteActions.tt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="CodeTemplates\CSharp\AddController\Empty.tt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="CodeTemplates\CSharp\AddView\Razor\Empty.tt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Templates\Common\Error.cshtml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -44,13 +58,36 @@
     <None Include="Templates\Common\HomeControllerTest.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Compile Include="Gui\RazorCSharpEditorExtension.cs" />
+    <Compile Include="Parser\OutlineNode.cs" />
+    <Compile Include="Parser\RazorCSharpParsedDocument.cs" />
+    <Compile Include="Parser\RazorCSharpParser.cs" />
+    <Compile Include="Parser\RazorPageInfo.cs" />
+    <Compile Include="Parser\RazorSymbols.cs" />
+    <Compile Include="Parser\RazorUtils.cs" />
+    <Compile Include="RazorSyntaxMode.cs" />
+    <Compile Include="StateEngine\RazorCodeBlockState.cs" />
+    <Compile Include="StateEngine\RazorCodeFragmentState.cs" />
+    <Compile Include="StateEngine\RazorCommentState.cs" />
+    <Compile Include="StateEngine\RazorDirectiveState.cs" />
+    <Compile Include="StateEngine\RazorDom.cs" />
+    <Compile Include="StateEngine\RazorExpressionState.cs" />
+    <Compile Include="StateEngine\RazorFreeState.cs" />
+    <Compile Include="StateEngine\RazorSpeculativeState.cs" />
+    <Compile Include="StateEngine\RazorState.cs" />
+    <Compile Include="StateEngine\RazorStatementState.cs" />
+    <Compile Include="StateEngine\StateEngineService.cs" />
     <Compile Include="TextTemplating\MvcTextTemplateHost.cs" />
     <Compile Include="gtk-gui\generated.cs" />
     <Compile Include="Gui\AddViewDialog.cs" />
     <Compile Include="gtk-gui\MonoDevelop.AspNet.Mvc.Gui.AddViewDialog.cs" />
+    <Compile Include="Gui\AddControllerDialog.cs" />
+    <Compile Include="gtk-gui\MonoDevelop.AspNet.Mvc.Gui.AddControllerDialog.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="Mono.Posix" />
@@ -63,6 +100,18 @@
     <Reference Include="pango-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
     <Reference Include="atk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
     <Reference Include="glib-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
+    <Reference Include="System.Web.Mvc">
+      <HintPath>lib\System.Web.Mvc.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Razor">
+      <HintPath>lib\System.Web.Razor.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.WebPages">
+      <HintPath>lib\System.Web.WebPages.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.WebPages.Razor">
+      <HintPath>lib\System.Web.WebPages.Razor.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="MonoDevelop.AspNet.Mvc.addin.xml">
@@ -75,6 +124,16 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\external\nrefactory\ICSharpCode.NRefactory.CSharp\ICSharpCode.NRefactory.CSharp.csproj">
+      <Project>{53DCA265-3C3C-42F9-B647-F72BA678122B}</Project>
+      <Name>ICSharpCode.NRefactory.CSharp</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\CSharpBinding\CSharpBinding.csproj">
+      <Project>{07CC7654-27D6-421D-A64C-0FFA40456FA2}</Project>
+      <Name>CSharpBinding</Name>
+      <Private>False</Private>
+    </ProjectReference>
     <ProjectReference Include="..\..\TextTemplating\Mono.TextTemplating\Mono.TextTemplating.csproj">
       <Project>{A2364D6A-00EF-417C-80A6-815726C70032}</Project>
       <Name>Mono.TextTemplating</Name>
@@ -110,31 +169,20 @@
       <Name>MonoDevelop.AspNet</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\contrib\ICSharpCode.NRefactory\ICSharpCode.NRefactory.csproj">
-      <Project>{3B2A5653-EC97-4001-BB9B-D90F1AF2C371}</Project>
-      <Name>ICSharpCode.NRefactory</Name>
-      <Private>False</Private>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\core\Mono.Texteditor\Mono.TextEditor.csproj">
       <Project>{A2329308-3751-4DBD-9A75-5F7B8B024625}</Project>
       <Name>Mono.TextEditor</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\..\MonoDevelop.SourceEditor2\MonoDevelop.SourceEditor.csproj">
-      <Project>{F8F92AA4-A376-4679-A9D4-60E7B7FBF477}</Project>
-      <Name>MonoDevelop.SourceEditor</Name>
+    <ProjectReference Include="..\..\..\..\external\nrefactory\ICSharpCode.NRefactory\ICSharpCode.NRefactory.csproj">
+      <Project>{3B2A5653-EC97-4001-BB9B-D90F1AF2C371}</Project>
+      <Name>ICSharpCode.NRefactory</Name>
+      <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\..\Deployment\MonoDevelop.Deployment\MonoDevelop.Deployment.csproj">
-      <Project>{9BC670A8-1851-40EC-9685-279F4C98433D}</Project>
-      <Name>MonoDevelop.Deployment</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MonoDevelop.Debugger\MonoDevelop.Debugger.csproj">
-      <Project>{2357AABD-08C7-4808-A495-8FF2D3CDFDB0}</Project>
-      <Name>MonoDevelop.Debugger</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\core\Mono.Debugging\Mono.Debugging.csproj">
-      <Project>{90C99ADB-7D4B-4EB4-98C2-40BD1B14C7D2}</Project>
-      <Name>Mono.Debugging</Name>
+    <ProjectReference Include="..\..\..\..\external\mono-addins\Mono.Addins\Mono.Addins.csproj">
+      <Project>{91DD5A2D-9FE3-4C3C-9253-876141874DAD}</Project>
+      <Name>Mono.Addins</Name>
+      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -181,7 +229,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </None>
-    <None Include="CodeTemplates\AddView\Empty.tt">
+    <None Include="CodeTemplates\CSharp\AddView\Aspx\Empty.tt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Makefile.am" />
@@ -239,5 +287,15 @@
     <None Include="Templates\ViewPageRazor.xft.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <None Include="Razor-templates.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
 </Project>

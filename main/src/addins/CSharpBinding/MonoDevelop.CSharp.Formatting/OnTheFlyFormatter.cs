@@ -76,7 +76,7 @@ namespace MonoDevelop.CSharp.Formatting
 		/// </param>
 		static string BuildStub (MonoDevelop.Ide.Gui.Document data, CSharpCompletionTextEditorExtension.TypeSystemTreeSegment seg, int startOffset, int endOffset, out int memberStartOffset)
 		{
-			var pf = data.ParsedDocument.ParsedFile as CSharpParsedFile;
+			var pf = data.ParsedDocument.ParsedFile as CSharpUnresolvedFile;
 			if (pf == null) {
 				memberStartOffset = 0;
 				return null;
@@ -90,6 +90,11 @@ namespace MonoDevelop.CSharp.Formatting
 			var scope = pf.GetUsingScope (seg.Entity.Region.Begin);
 
 			while (scope != null && !string.IsNullOrEmpty (scope.NamespaceName)) {
+				// Hack: some syntax errors lead to invalid namespace names.
+				if (scope.NamespaceName.EndsWith ("<invalid>")) {
+					scope = scope.Parent;
+					continue;
+				}
 				sb.Append ("namespace Stub {");
 				sb.Append (data.Editor.EolMarker);
 				closingBrackets++;

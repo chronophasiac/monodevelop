@@ -162,10 +162,10 @@ namespace Stetic.Editor
 			return (ForallDelegate) dm.CreateDelegate (typeof (ForallDelegate));
 		}
 		
-		[GLib.CDeclCallback]
+		[UnmanagedFunctionPointer (CallingConvention.Cdecl)]
 		delegate void ForallDelegate (IntPtr container, bool include_internals, IntPtr cb, IntPtr data);
 		
-		[DllImport("gtksharpglue-2")]
+		[DllImport("gtksharpglue-2", CallingConvention = CallingConvention.Cdecl)]
 		static extern void gtksharp_container_override_forall (IntPtr gtype, ForallDelegate cb);
 	}
 	

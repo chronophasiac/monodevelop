@@ -82,16 +82,26 @@ namespace MonoDevelop.AspNet.Mvc
 			return base.GetSpecialDirectories ();
 		}
 		
-		public IList<string> GetCodeTemplates (string type)
+		public IList<string> GetCodeTemplates (string type, string subtype = null)
 		{
-			List<string> files = new List<string> ();
-			HashSet<string> names = new HashSet<string> ();
+			var files = new List<string> ();
+			var names = new HashSet<string> ();
 			
 			string asmDir = Path.GetDirectoryName (typeof (AspMvcProject).Assembly.Location);
+			string lang = this.LanguageName;
+			if (lang == "C#") {
+				lang = "CSharp";
+			}
+
+			if (subtype != null) {
+				type = Path.Combine (type, subtype);
+			}
 			
-			string[] dirs = new string[] {
-				Path.Combine (Path.Combine (this.BaseDirectory, "CodeTemplates"), type),
-				Path.Combine (Path.Combine (asmDir, "CodeTemplates"), type)
+			var dirs = new string[] {
+				Path.Combine (this.BaseDirectory, "CodeTemplates", type),
+				Path.Combine (this.BaseDirectory, "CodeTemplates", lang, type),
+				Path.Combine (asmDir, "CodeTemplates", type),
+				Path.Combine (asmDir, "CodeTemplates", lang, type),
 			};
 			
 			foreach (string directory in dirs)
@@ -169,6 +179,28 @@ namespace MonoDevelop.AspNet.Mvc
 		{
 		}
 
+		public override bool SupportsFramework (MonoDevelop.Core.Assemblies.TargetFramework framework)
+		{
+			return framework.IsCompatibleWithFramework (MonoDevelop.Core.Assemblies.TargetFrameworkMoniker.NET_4_0);
+		}
+	}
+
+	public class AspMvc4Project : AspMvcProject
+	{
+		public AspMvc4Project ()
+		{
+		}
+		
+		public AspMvc4Project (string languageName)
+			: base (languageName)
+		{
+		}
+		
+		public AspMvc4Project (string languageName, ProjectCreateInformation info, XmlElement projectOptions)
+			: base (languageName, info, projectOptions)
+		{
+		}
+		
 		public override bool SupportsFramework (MonoDevelop.Core.Assemblies.TargetFramework framework)
 		{
 			return framework.IsCompatibleWithFramework (MonoDevelop.Core.Assemblies.TargetFrameworkMoniker.NET_4_0);

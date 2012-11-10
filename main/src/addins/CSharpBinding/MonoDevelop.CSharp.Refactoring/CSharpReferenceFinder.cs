@@ -181,8 +181,8 @@ namespace MonoDevelop.CSharp.Refactoring
 			var parsedDocument = doc.ParsedDocument;
 			if (parsedDocument == null)
 				return Enumerable.Empty<MemberReference> ();
-			var unit = parsedDocument.GetAst<CompilationUnit> ();
-			var file = parsedDocument.ParsedFile as CSharpParsedFile;
+			var unit = parsedDocument.GetAst<SyntaxTree> ();
+			var file = parsedDocument.ParsedFile as CSharpUnresolvedFile;
 			var result = new List<MemberReference> ();
 			
 			foreach (var obj in searchedMembers) {
@@ -208,15 +208,13 @@ namespace MonoDevelop.CSharp.Refactoring
 		
 		public override IEnumerable<MemberReference> FindReferences (Project project, IProjectContent content, IEnumerable<FilePath> possibleFiles, IEnumerable<object> members)
 		{
-			if (project == null)
-				throw new ArgumentNullException ("project", "Project not set.");
 			if (content == null)
 				throw new ArgumentNullException ("content", "Project content not set.");
 			SetPossibleFiles (possibleFiles);
 			SetSearchedMembers (members);
-			
+
 			var scopes = searchedMembers.Select (e => refFinder.GetSearchScopes (e as IEntity));
-			var compilation = TypeSystemService.GetCompilation (project);
+			var compilation = project != null ? TypeSystemService.GetCompilation (project) : content.CreateCompilation ();
 			List<MemberReference> refs = new List<MemberReference> ();
 			foreach (var opendoc in openDocuments) {
 				foreach (var newRef in FindInDocument (opendoc.Item2)) {
@@ -238,10 +236,10 @@ namespace MonoDevelop.CSharp.Refactoring
 						continue;
 					
 					var storedFile = content.GetFile (file);
-					var parsedFile = storedFile as CSharpParsedFile;
+					var parsedFile = storedFile as CSharpUnresolvedFile;
 					
 					if (parsedFile == null && storedFile is ParsedDocumentDecorator) {
-						parsedFile = ((ParsedDocumentDecorator)storedFile).ParsedFile as CSharpParsedFile;
+						parsedFile = ((ParsedDocumentDecorator)storedFile).ParsedFile as CSharpUnresolvedFile;
 					}
 					
 					if (parsedFile == null) {

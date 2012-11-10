@@ -15,6 +15,11 @@ Directory organization
 Compiling
 ---------
 
+	If you are building from Git, make sure that you initialize the submodules
+	that are part of MonoDevelop, to do this execute:
+
+	git submodule update --init --recursive
+
 	To compile execute:
 
 	./configure
@@ -98,5 +103,5 @@ Discussion, Bugs, Patches
 	monodevelop-list@lists.ximian.com (questions and discussion)
 	monodevelop-patches-list@lists.ximian.com (track commits to MonoDevelop)
 	monodevelop-bugs@lists.ximian.com (track MonoDevelop bugzilla component)
-	http://bugzilla.novell.com (submit bugs and patches here)
+	http://bugzilla.xamarin.com (submit bugs and patches here)
 

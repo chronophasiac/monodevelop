@@ -93,10 +93,10 @@ namespace MonoDevelop.MacDev.XcodeSyncing
 					toRemove.Remove (file);
 					
 					if (!itemMap.ContainsKey (file)) {
-						monitor.Log.WriteLine ("\t'{0}' needs to be added.", file);
+						monitor.Log.WriteLine ("   '{0}' needs to be added.", file);
 						updateProject = true;
 					} else if (needsSync) {
-						monitor.Log.WriteLine ("\t'{0}' needs to be closed & updated.", file);
+						monitor.Log.WriteLine ("   '{0}' needs to be closed & updated.", file);
 						toClose.Add (file);
 					}
 					
@@ -359,7 +359,7 @@ namespace MonoDevelop.MacDev.XcodeSyncing
 		static string GetWorkspacePath (string infoPlist)
 		{
 			try {
-				var dict = PDictionary.Load (infoPlist);
+				var dict = PDictionary.FromFile (infoPlist);
 				PString val;
 				if (dict.TryGetValue<PString>("WorkspacePath", out val))
 					return val.Value;

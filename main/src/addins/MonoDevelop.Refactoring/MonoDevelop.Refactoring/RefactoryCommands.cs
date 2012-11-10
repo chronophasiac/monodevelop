@@ -109,9 +109,9 @@ namespace MonoDevelop.Refactoring
 		
 		class JumpTo
 		{
-			INamedElement el;
+			object el;
 			
-			public JumpTo (INamedElement el)
+			public JumpTo (object el)
 			{
 				this.el = el;
 			}
@@ -123,9 +123,13 @@ namespace MonoDevelop.Refactoring
 					IdeApp.Workbench.OpenDocument (e.Region.FileName, e.Region.BeginLine, e.Region.BeginColumn);
 					return;
 				} 
-				IdeApp.ProjectOperations.JumpToDeclaration (el);
+				if (el is IVariable)
+					IdeApp.ProjectOperations.JumpToDeclaration ((IVariable)el);
+				if (el is INamedElement)
+					IdeApp.ProjectOperations.JumpToDeclaration ((INamedElement)el);
 			}
 		}
+
 		
 		class GotoBase 
 		{
@@ -267,7 +271,7 @@ namespace MonoDevelop.Refactoring
 				added = true;
 			}
 			
-			if (IdeApp.ProjectOperations.CanJumpToDeclaration (item as INamedElement)) {
+			if (IdeApp.ProjectOperations.CanJumpToDeclaration (item)) {
 				var type = item as ICSharpCode.NRefactory.TypeSystem.IType;
 				if (type != null && type.GetDefinition ().Parts.Count > 1) {
 					var declSet = new CommandInfoSet ();
@@ -277,11 +281,11 @@ namespace MonoDevelop.Refactoring
 						declSet.CommandInfos.Add (string.Format (GettextCatalog.GetString ("{0}, Line {1}"), FormatFileName (part.Region.FileName), part.Region.BeginLine), new System.Action (new JumpTo (part).Run));
 					ainfo.Add (declSet);
 				} else {
-					ainfo.Add (IdeApp.CommandService.GetCommandInfo (RefactoryCommands.GotoDeclaration), new System.Action (new JumpTo (item as INamedElement).Run));
+					ainfo.Add (IdeApp.CommandService.GetCommandInfo (RefactoryCommands.GotoDeclaration), new System.Action (new JumpTo (item).Run));
 				}
 				added = true;
 			}
-			
+
 			if (item is IEntity || item is ITypeParameter || item is IVariable) {
 				ainfo.Add (IdeApp.CommandService.GetCommandInfo (RefactoryCommands.FindReferences), new System.Action (new FindRefs (item).Run));
 				added = true;
@@ -442,7 +446,7 @@ namespace MonoDevelop.Refactoring
 //				added = true;
 //			}
 //			
-//			IParsedFile pinfo = doc.CompilationUnit;
+//			IUnresolvedFile pinfo = doc.CompilationUnit;
 //			if (pinfo == null)
 //				return;
 //			
@@ -663,7 +667,7 @@ namespace MonoDevelop.Refactoring
 			return fileName;
 		}
 		/*
-		CommandInfo BuildRefactoryMenuForItem (ITypeResolveContext ctx, IParsedFile pinfo, IType eclass, INode item, bool includeModifyCommands)
+		CommandInfo BuildRefactoryMenuForItem (ITypeResolveContext ctx, IUnresolvedFile pinfo, IType eclass, INode item, bool includeModifyCommands)
 		{
 			INode realItem = item;
 			if (item is InstantiatedType)
@@ -867,7 +871,7 @@ namespace MonoDevelop.Refactoring
 			return cls.GetMembers ().Any (m => m.IsAbstract);
 		}
 		
-	/*	void AddRefactoryMenuForClass (ITypeResolveContext ctx, IParsedFile pinfo, CommandInfoSet ciset, string className)
+	/*	void AddRefactoryMenuForClass (ITypeResolveContext ctx, IUnresolvedFile pinfo, CommandInfoSet ciset, string className)
 		{
 			IType cls = ctx.GetType (className, null, true, true);
 			if (cls != null) {

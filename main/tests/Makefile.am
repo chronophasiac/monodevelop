@@ -1,4 +1,6 @@
-include $(top_srcdir)/Makefile.include
+include $(top_srcdir)/xbuild.include
+
+SUBDIRS=UnitTests MacPlatform.Tests UserInterfaceTests
 
 MONO=mono
 HARNESS=$(top_srcdir)/external/mdtestharness/nunit-console-x86.exe -domain=multiple
@@ -7,8 +9,7 @@ TEST_DIR=$(top_builddir)/build/tests
 EXTERNAL=$(top_builddir)/external
 
 TEST_PROJECTS_MAC = \
-	MacPlatform.Tests/MacPlatform.Tests.csproj \
-	MonoDevelop.MacDev.Tests/MonoDevelop.MacDev.Tests.csproj
+	MacPlatform.Tests/MacPlatform.Tests.csproj
 
 TEST_PROJECTS_COMMON = \
 	UnitTests/UnitTests.csproj \
@@ -16,8 +17,7 @@ TEST_PROJECTS_COMMON = \
 	$(EXTERNAL)/ngit/NGit.Test/NGit.Test.csproj
 
 TEST_ASSEMBLIES_MAC = \
-	$(TEST_DIR)/MacPlatform.Tests.dll \
-	$(TEST_DIR)/MonoDevelop.MacDev.Tests.dll
+	$(TEST_DIR)/MacPlatform.Tests.dll
 
 TEST_ASSEMBLIES_COMMON = \
 	$(TEST_DIR)/UnitTests.dll \
@@ -25,25 +25,13 @@ TEST_ASSEMBLIES_COMMON = \
 	$(EXTERNAL)/ngit/bin/NGit.Test.dll
 
 
-TEST_PROJECTS = $(TEST_PROJECTS_COMMON)
+ALL_CSPROJ = $(TEST_PROJECTS_COMMON)
 TEST_ASSEMBLIES = $(TEST_ASSEMBLIES_COMMON)
 
 if ENABLE_MACPLATFORM
-TEST_PROJECTS += $(TEST_PROJECTS_MAC)
+ALL_CSPROJ += $(TEST_PROJECTS_MAC)
 TEST_ASSEMBLIES += $(TEST_ASSEMBLIES_MAC)
 endif
-
-if ENABLE_TESTS
-
-all:
-	@for csproj in $(TEST_PROJECTS); do \
-		xbuild /property:CodePage=65001 $$csproj || exit $?; \
-	done
-
-clean:
-	@for csproj in $(TEST_PROJECTS); do \
-		xbuild /property:CodePage=65001 /t:Clean $$csproj || exit $?; \
-	done
 
 test:
 	@if test -n "$(assembly)"; then \
@@ -159,10 +147,3 @@ EXTRA_DIST = \
 	test-projects/console-project/ConsoleProject/Program.cs \
 	test-projects/console-project/ConsoleProject.sln
 
-else
-
-test:
-	@echo "md is configured without --enable-tests."
-	@exit 1
-
-endif

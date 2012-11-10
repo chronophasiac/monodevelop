@@ -269,6 +269,7 @@ namespace MonoDevelop.MacDev.PlistEditor
 			typeModel.AppendValues (PData.Type);
 			typeModel.AppendValues (PData.Type);
 			typeModel.AppendValues (PNumber.Type);
+			typeModel.AppendValues (PReal.Type);
 			typeModel.AppendValues (PString.Type);
 			comboRenderer.Model = typeModel;
 			comboRenderer.Mode = CellRendererMode.Editable;
@@ -317,9 +318,16 @@ namespace MonoDevelop.MacDev.PlistEditor
 					var identifier = (string) tree_model.GetValue (iter, 0);
 					var values = PListScheme.AvailableValues (obj, CurrentTree);
 					var item = values == null ? null : values.FirstOrDefault (v => v.Identifier == identifier);
-					if (item != null) {
-						renderer.Text = item.Description ?? item.Identifier;
-						return;
+					if (item != null && obj is IPValueObject) {
+						// Ensure that we only display the Description if the items value matches the description/identifier.
+						// For example when setting the Document Type Name we wish to display whatever identifer the user types
+						// in and not the literal string 'Document Type Name'. However for somegthing like UISupportedDeviceOrientations
+						// we can safely display the description 'iPhone' or 'iPad' and not hide important information.
+						var actualValue = ((IPValueObject) obj).Value;
+						if (actualValue  != null && (actualValue.ToString () == item.Description || actualValue.ToString () == item.Identifier)) {
+							renderer.Text = item.Description ?? item.Identifier;
+							return;
+						}
 					}
 				}
 
@@ -602,7 +610,10 @@ namespace MonoDevelop.MacDev.PlistEditor
 					if (treeStore.IterChildren (out subIter, iter))
 						RemovePObjects (subIter, toRemove);
 				}
-			} while (!iter.Equals (TreeIter.Zero) && treeStore.IterNext (ref iter));
+
+				if (!treeStore.IterNext (ref iter))
+					break;
+			} while (!iter.Equals (TreeIter.Zero));
 		}
 	}
 }

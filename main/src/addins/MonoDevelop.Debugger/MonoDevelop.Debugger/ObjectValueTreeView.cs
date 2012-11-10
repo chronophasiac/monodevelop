@@ -56,6 +56,7 @@ namespace MonoDevelop.Debugger
 		bool allowAdding;
 		bool allowEditing;
 		bool allowExpanding = true;
+		bool restoringState = false;
 		bool compact;
 		StackFrame frame;
 		bool disposed;
@@ -269,20 +270,20 @@ namespace MonoDevelop.Debugger
 			
 			double width = (double) Allocation.Width;
 			
-			int texp = (int) (width * expColWidth);
+			int texp = Math.Max ((int) (width * expColWidth), 1);
 			if (texp != expCol.FixedWidth) {
 				expCol.FixedWidth = texp;
 			}
 			
 			int ttype = 0;
 			if (typeCol.Visible) {
-				ttype = (int) (width * typeColWidth);
+				ttype = Math.Max ((int) (width * typeColWidth), 1);
 				if (ttype != typeCol.FixedWidth) {
 					typeCol.FixedWidth = ttype;
 				}
 			}
 			
-			int tval = (int) (width * valueColWidth);
+			int tval = Math.Max ((int) (width * valueColWidth), 1);
 
 			if (tval != valueCol.FixedWidth) {
 				valueCol.FixedWidth = tval;
@@ -329,7 +330,9 @@ namespace MonoDevelop.Debugger
 		
 		public void LoadState ()
 		{
+			restoringState = true;
 			state.Load ();
+			restoringState = false;
 		}
 		
 		public bool AllowAdding {
@@ -438,6 +441,16 @@ namespace MonoDevelop.Debugger
 			values.Remove (value);
 			Refresh ();
 		}
+
+		public void ReplaceValue (ObjectValue old, ObjectValue @new)
+		{
+			int idx = values.IndexOf (old);
+			if (idx == -1)
+				return;
+
+			values [idx] = @new;
+			Refresh ();
+		}
 		
 		public void ClearValues ()
 		{
@@ -467,7 +480,7 @@ namespace MonoDevelop.Debugger
 				UnregisterValue (val);
 			nodes.Clear ();
 			
-			state.Save ();
+			SaveState ();
 			
 			CleanPinIcon ();
 			store.Clear ();
@@ -488,13 +501,14 @@ namespace MonoDevelop.Debugger
 						showExpanders = true;
 				}
 			}
-			
-			ShowExpanders = showExpanders;
+
+			if (showExpanders)
+				ShowExpanders = true;
 			
 			if (AllowAdding)
 				store.AppendValues (createMsg, "", "", null, true, true, null, disabledColor, disabledColor);
 			
-			state.Load ();
+			LoadState ();
 		}
 		
 		void RefreshRow (TreeIter it)
@@ -700,14 +714,15 @@ namespace MonoDevelop.Debugger
 			strval = strval.Replace (Environment.NewLine, " ");
 			
 			bool showViewerButton = DebuggingService.HasValueVisualizers (val);
-			
+
+			bool hasChildren = val.HasChildren;
 			string icon = GetIcon (val.Flags);
 
 			store.SetValue (it, NameCol, name);
 			store.SetValue (it, ValueCol, strval);
 			store.SetValue (it, TypeCol, val.TypeName);
 			store.SetValue (it, ObjectCol, val);
-			store.SetValue (it, ExpandedCol, !val.HasChildren);
+			store.SetValue (it, ExpandedCol, !hasChildren);
 			store.SetValue (it, NameEditableCol, !hasParent && allowAdding);
 			store.SetValue (it, ValueEditableCol, canEdit);
 			store.SetValue (it, IconCol, icon);
@@ -726,7 +741,7 @@ namespace MonoDevelop.Debugger
 			if (RootPinAlwaysVisible && (!hasParent && PinnedWatch ==null && AllowPinning))
 				store.SetValue (it, PinIconCol, "md-pin-up");
 			
-			if (val.HasChildren) {
+			if (hasChildren) {
 				// Add dummy node
 				it = store.AppendValues (it, "", "", "", null, true);
 				if (!ShowExpanders)
@@ -764,16 +779,18 @@ namespace MonoDevelop.Debugger
 		
 		protected override bool OnTestExpandRow (TreeIter iter, TreePath path)
 		{
-			if (!allowExpanding)
-				return true;
-			
-			if (GetRowExpanded (path))
-				return true;
-			
-			TreeIter parent;
-			if (store.IterParent (out parent, iter)) {
-				if (!GetRowExpanded (store.GetPath (parent)))
+			if (!restoringState) {
+				if (!allowExpanding)
 					return true;
+			
+				if (GetRowExpanded (path))
+					return true;
+
+				TreeIter parent;
+				if (store.IterParent (out parent, iter)) {
+					if (!GetRowExpanded (store.GetPath (parent)))
+						return true;
+				}
 			}
 			
 			return base.OnTestExpandRow (iter, path);
@@ -1314,9 +1331,14 @@ namespace MonoDevelop.Debugger
 		
 		string ICompletionWidget.GetText (int startOffset, int endOffset)
 		{
-			if (startOffset < 0) startOffset = 0;
-			if (endOffset > editEntry.Text.Length) endOffset = editEntry.Text.Length;
-			return editEntry.Text.Substring (startOffset, endOffset - startOffset);
+			string text = editEntry.Text;
+
+			if (startOffset < 0 || endOffset < 0 || startOffset > endOffset || startOffset >= text.Length)
+				return "";
+
+			int length = Math.Min (endOffset - startOffset, text.Length - startOffset);
+
+			return text.Substring (startOffset, length);
 		}
 		
 		void ICompletionWidget.Replace (int offset, int count, string text)

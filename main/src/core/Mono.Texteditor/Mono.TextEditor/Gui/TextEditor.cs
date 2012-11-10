@@ -125,11 +125,11 @@ namespace Mono.TextEditor
 			IMContext.AppendMenuitems (imContextMenu);
 			return imContextMenuItem;
 		}
-		
-		[DllImport (PangoUtil.LIBGTK)]
+
+		[DllImport (PangoUtil.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
 		static extern void gtk_im_multicontext_set_context_id (IntPtr context, string context_id);
-		
-		[DllImport (PangoUtil.LIBGTK)]
+
+		[DllImport (PangoUtil.LIBGTK, CallingConvention = CallingConvention.Cdecl)]
 		static extern string gtk_im_multicontext_get_context_id (IntPtr context);
 		
 		[GLib.Property ("im-module")]
@@ -2598,8 +2598,13 @@ namespace Mono.TextEditor
 				tipX = nextTipX;
 				tipY = nextTipY;
 				tipItem = item;
-				
-				Gtk.Window tw = provider.CreateTooltipWindow (this, nextTipOffset, nextTipModifierState, item);
+				Gtk.Window tw = null;
+				try {
+					tw = provider.CreateTooltipWindow (this, nextTipOffset, nextTipModifierState, item);
+				} catch (Exception e) {
+					Console.WriteLine ("-------- Exception while creating tooltip:");
+					Console.WriteLine (e);
+				}
 				if (tw == tipWindow)
 					return false;
 				HideTooltip ();

@@ -55,10 +55,6 @@
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
-    <Reference Include="Mono.Addins, Version=0.6.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756">
-      <Private>False</Private>
-      <SpecificVersion>False</SpecificVersion>
-    </Reference>
     <Reference Include="gdk-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f">
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
@@ -129,14 +125,6 @@
       <Project>{3A9AE6AA-BC07-4A2F-972C-581E3AE2F195}</Project>
       <Name>NRefactory</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\contrib\ICSharpCode.NRefactory\ICSharpCode.NRefactory.csproj">
-      <Project>{3B2A5653-EC97-4001-BB9B-D90F1AF2C371}</Project>
-      <Name>ICSharpCode.NRefactory</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\contrib\ICSharpCode.NRefactory.CSharp\ICSharpCode.NRefactory.CSharp.csproj">
-      <Project>{53DCA265-3C3C-42F9-B647-F72BA678122B}</Project>
-      <Name>ICSharpCode.NRefactory.CSharp</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\external\ngit\NGit\NGit.csproj">
       <Project>{E3BFF8B4-189C-496A-A817-7E8B31E22B91}</Project>
       <Name>NGit</Name>
@@ -198,15 +186,42 @@
       <Name>Mono.Debugging.Soft</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\src\core\MonoDevelop.Projects.Formats.MSBuild\MonoDevelop.Projects.Formats.MSBuild.v3.5.csproj">
-      <Project>{40a31ade-6f26-4d99-a3c7-87bb8236151d}</Project>
+      <Project>{40A31ADE-6F26-4D99-A3C7-87BB8236151D}</Project>
       <Name>MonoDevelop.Projects.Formats.MSBuild.v3.5</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\external\ngit\Sharpen.Unix\Sharpen.Unix.csproj">
       <Project>{849AE05D-0058-4A8C-A0E8-77DC6BB12E52}</Project>
       <Name>Sharpen.Unix</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\external\nrefactory\ICSharpCode.NRefactory\ICSharpCode.NRefactory.csproj">
+      <Project>{3B2A5653-EC97-4001-BB9B-D90F1AF2C371}</Project>
+      <Name>ICSharpCode.NRefactory</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\external\nrefactory\ICSharpCode.NRefactory.CSharp\ICSharpCode.NRefactory.CSharp.csproj">
+      <Project>{53DCA265-3C3C-42F9-B647-F72BA678122B}</Project>
+      <Name>ICSharpCode.NRefactory.CSharp</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\external\mono-addins\Mono.Addins\Mono.Addins.csproj">
+      <Project>{91DD5A2D-9FE3-4C3C-9253-876141874DAD}</Project>
+      <Name>Mono.Addins</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\contrib\ICSharpCode.Decompiler\ICSharpCode.Decompiler.csproj">
+      <Project>{984CC812-9470-4A13-AFF9-CC44068D666C}</Project>
+      <Name>ICSharpCode.Decompiler</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MonoDevelop.AspNet.Mvc.Completion\CompletionTests.cs" />
+    <Compile Include="MonoDevelop.AspNet.Mvc.Completion\RazorCompletionTesting.cs" />
+    <Compile Include="MonoDevelop.AspNet.Mvc.StateEngine\RazorCodeBlockParsingTests.cs" />
+    <Compile Include="MonoDevelop.AspNet.Mvc.StateEngine\RazorCodeFragmentsParsingTests.cs" />
+    <Compile Include="MonoDevelop.AspNet.Mvc.StateEngine\RazorCommentParsingTests.cs" />
+    <Compile Include="MonoDevelop.AspNet.Mvc.StateEngine\RazorDirectivesParsingTests.cs" />
+    <Compile Include="MonoDevelop.AspNet.Mvc.StateEngine\RazorExplicitExpressionsParsingTests.cs" />
+    <Compile Include="MonoDevelop.AspNet.Mvc.StateEngine\RazorImplicitExpressionsParsingTests.cs" />
+    <Compile Include="MonoDevelop.AspNet.Mvc.StateEngine\RazorParsingTests.cs" />
+    <Compile Include="MonoDevelop.AspNet.Mvc.StateEngine\RazorStatementsParsingTests.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="MonoDevelop.Projects\MdsTests.cs" />
     <Compile Include="MonoDevelop.Projects\TestProjectsChecks.cs" />
@@ -292,7 +307,7 @@
     <None Include="MonoDevelop.Projects\CompletionDatabaseTests.cs" />
     <None Include="MonoDevelop.Projects\DomPersistenceTests.cs" />
     <None Include="MonoDevelop.Projects\DomCompilationUnitTests.cs" />
-    <None Include="MonoDevelop.Xml.StateEngine\TestParser.cs" />
+    <Compile Include="MonoDevelop.Xml.StateEngine\TestParser.cs" />
     <None Include="MonoDevelop.Projects\DomTests.cs" />
     <None Include="MonoDevelop.Xml.StateEngine\ParsingTests.cs" />
     <None Include="MonoDevelop.Xml.StateEngine\AspNetParsingTests.cs" />
