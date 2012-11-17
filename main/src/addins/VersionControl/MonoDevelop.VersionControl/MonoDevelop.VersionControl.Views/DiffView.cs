@@ -182,7 +182,7 @@ namespace MonoDevelop.VersionControl.Views
 			var editor = this.widget.FocusedEditor;
 			if (editor == null)
 				return;
-			editor.RunAction (Mono.TextEditor.ClipboardActions.Cut);
+			editor.RunActions (Mono.TextEditor.ClipboardActions.Cut);
 		}
 
 		void IClipboardHandler.Copy ()
@@ -190,7 +190,7 @@ namespace MonoDevelop.VersionControl.Views
 			var editor = this.widget.FocusedEditor;
 			if (editor == null)
 				return;
-			editor.RunAction (Mono.TextEditor.ClipboardActions.Copy);
+			editor.RunActions (Mono.TextEditor.ClipboardActions.Copy);
 		}
 
 		void IClipboardHandler.Paste ()
@@ -198,7 +198,7 @@ namespace MonoDevelop.VersionControl.Views
 			var editor = this.widget.FocusedEditor;
 			if (editor == null)
 				return;
-			editor.RunAction (Mono.TextEditor.ClipboardActions.Paste);
+			editor.RunActions (Mono.TextEditor.ClipboardActions.Paste);
 		}
 
 		void IClipboardHandler.Delete ()
@@ -209,7 +209,7 @@ namespace MonoDevelop.VersionControl.Views
 			if (editor.IsSomethingSelected) {
 				editor.DeleteSelectedText ();
 			} else {
-				editor.RunAction (Mono.TextEditor.DeleteActions.Delete);
+				editor.RunActions (Mono.TextEditor.DeleteActions.Delete);
 			}
 		}
 
@@ -218,7 +218,7 @@ namespace MonoDevelop.VersionControl.Views
 			var editor = this.widget.FocusedEditor;
 			if (editor == null)
 				return;
-			editor.RunAction (Mono.TextEditor.SelectionActions.SelectAll);
+			editor.RunActions (Mono.TextEditor.SelectionActions.SelectAll);
 		}
 
 		bool IClipboardHandler.EnableCut {

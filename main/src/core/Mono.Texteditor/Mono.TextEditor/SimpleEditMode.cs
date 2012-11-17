@@ -416,7 +416,7 @@ namespace Mono.TextEditor
 		{
 			int keyCode = GetKeyCode (key, modifier);
 			if (keyBindings.ContainsKey (keyCode)) {
-				RunAction (keyBindings [keyCode]);
+				RunActions (keyBindings [keyCode]);
 			} else if (unicodeKey != 0 && modifier == Gdk.ModifierType.None) {
 				InsertCharacter (unicodeKey);
 			}

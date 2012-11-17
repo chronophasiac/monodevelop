@@ -123,7 +123,7 @@ namespace Mono.TextEditor.Vi
 				data.Caret.PreserveSelection = false;
 		}
 		
-		public void RunAction (Action<ViEditor> action)
+		public void RunActions (Action<ViEditor> action)
 		{
 			Completed = true;
 			
@@ -183,7 +183,7 @@ namespace Mono.TextEditor.Vi
 		static ViBuilder normalBuilder, insertActions;
 		
 		static ViCommandMap normalActions = new ViCommandMap () {
-			{ 'J', ViActions.Join },
+			{ 'J', ViMotionsAndCommands.Join },
 			{ 'z', new ViCommandMap () {
 				{ 'A', FoldActions.ToggleFoldRecursive },
 				{ 'C', FoldActions.CloseFoldRecursive },
@@ -198,7 +198,7 @@ namespace Mono.TextEditor.Vi
 				{ 'g', CaretMoveActions.ToDocumentStart },
 			}},
 			{ 'r', ViBuilders.ReplaceChar },
-			{ '~', ViActions.ToggleCase },
+			{ '~', ViMotionsAndCommands.ToggleCase },
 			{ 'm', ViBuilders.Mark },
 			{ 'M', ViEditorActions.CaretToScreenCenter },
 			{ 'H', ViEditorActions.CaretToScreenTop },
@@ -216,37 +216,37 @@ namespace Mono.TextEditor.Vi
 		
 		static ViCommandMap motions = new ViCommandMap () {
 			{ '`', ViBuilders.GoToMark },
-			{ 'h', ViActions.Left },
+			{ 'h', ViMotionsAndCommands.Left },
 			{ 'b', CaretMoveActions.PreviousSubword },
 			{ 'B', CaretMoveActions.PreviousWord },
-			{ 'l', ViActions.Right },
+			{ 'l', ViMotionsAndCommands.Right },
 			{ 'w', CaretMoveActions.NextSubword },
 			{ 'W', CaretMoveActions.NextWord },
-			{ 'k', ViActions.Up },
-			{ 'j', ViActions.Down },
+			{ 'k', ViMotionsAndCommands.Up },
+			{ 'j', ViMotionsAndCommands.Down },
 			{ '%', MiscActions.GotoMatchingBracket },
 			{ '0', CaretMoveActions.LineStart },
 			{ '^', CaretMoveActions.LineFirstNonWhitespace },
 			{ '_', CaretMoveActions.LineFirstNonWhitespace },
-			{ '$', ViActions.LineEnd },
+			{ '$', ViMotionsAndCommands.LineEnd },
 			{ 'G', CaretMoveActions.ToDocumentEnd },
-			{ '{', ViActions.MoveToPreviousEmptyLine },
-			{ '}', ViActions.MoveToNextEmptyLine },
+			{ '{', ViMotionsAndCommands.MoveToPreviousEmptyLine },
+			{ '}', ViMotionsAndCommands.MoveToNextEmptyLine },
 		};
 		
 		static ViCommandMap nonCharMotions = new ViCommandMap () {
-			{ Key.Left,         ViActions.Left },
-			{ Key.KP_Left,      ViActions.Left },
-			{ Key.Right,        ViActions.Right },
-			{ Key.KP_Right,     ViActions.Right },
-			{ Key.Up,           ViActions.Up },
-			{ Key.KP_Up,        ViActions.Up },
-			{ Key.Down,         ViActions.Down },
-			{ Key.KP_Down,      ViActions.Down },
+			{ Key.Left,         ViMotionsAndCommands.Left },
+			{ Key.KP_Left,      ViMotionsAndCommands.Left },
+			{ Key.Right,        ViMotionsAndCommands.Right },
+			{ Key.KP_Right,     ViMotionsAndCommands.Right },
+			{ Key.Up,           ViMotionsAndCommands.Up },
+			{ Key.KP_Up,        ViMotionsAndCommands.Up },
+			{ Key.Down,         ViMotionsAndCommands.Down },
+			{ Key.KP_Down,      ViMotionsAndCommands.Down },
 			{ Key.KP_Home,      CaretMoveActions.LineHome },
 			{ Key.Home,         CaretMoveActions.LineHome },
-			{ Key.KP_End,       ViActions.LineEnd },
-			{ Key.End,          ViActions.LineEnd },
+			{ Key.KP_End,       ViMotionsAndCommands.LineEnd },
+			{ Key.End,          ViMotionsAndCommands.LineEnd },
 			{ Key.Page_Up,      CaretMoveActions.PageUp },
 			{ Key.KP_Page_Up,   CaretMoveActions.PageUp },
 			{ Key.Page_Down,    CaretMoveActions.PageDown },
@@ -280,7 +280,7 @@ namespace Mono.TextEditor.Vi
 		
 		static bool Insert (ViBuilderContext ctx)
 		{
-			ctx.RunAction ((ViEditor e) => e.SetMode (ViEditorMode.Insert));
+			ctx.RunActions ((ViEditor e) => e.SetMode (ViEditorMode.Insert));
 			ctx.SuppressCompleted ();
 			
 			ctx.Builder = ViBuilders.InsertBuilder (insertActions);
@@ -289,7 +289,7 @@ namespace Mono.TextEditor.Vi
 		
 		static bool Replace (ViBuilderContext ctx)
 		{
-			ctx.RunAction ((ViEditor e) => e.SetMode (ViEditorMode.Replace));
+			ctx.RunActions ((ViEditor e) => e.SetMode (ViEditorMode.Replace));
 			ctx.SuppressCompleted ();
 			
 			ctx.Builder = ViBuilders.InsertBuilder (insertActions);
@@ -298,14 +298,14 @@ namespace Mono.TextEditor.Vi
 		
 		static bool Open (ViBuilderContext ctx)
 		{
-			ctx.RunAction ((ViEditor e) => MiscActions.InsertNewLineAtEnd (e.Data));
+			ctx.RunActions ((ViEditor e) => MiscActions.InsertNewLineAtEnd (e.Data));
 			return Insert (ctx);
 		}
 		
 		static bool OpenAbove (ViBuilderContext ctx)
 		{
 			// FIXME: this doesn't work correctly on the first line
-			ctx.RunAction ((ViEditor e) => ViActions.Up (e.Data));
+			ctx.RunActions ((ViEditor e) => ViMotionsAndCommands.Up (new ViMotionContext(e.Data)));
 			return Open (ctx);
 		}
 	}

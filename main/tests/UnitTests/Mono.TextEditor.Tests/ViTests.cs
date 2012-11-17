@@ -29,6 +29,9 @@ using NUnit.Framework;
 using System.Reflection;
 using Mono.TextEditor.Vi;
 using System.Text;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Mono.TextEditor.Tests
 {
@@ -257,7 +260,89 @@ kkk lll", mode.Text);
 			Assert.AreEqual (11, keys.Count);
 			var s = ViKeyNotation.ToString (keys);
 			Assert.AreEqual (command, s);
+
 		}
+
+		public class ExternalViTest
+		{
+			public List<string> Text = new List<string>();
+			public List<string> Input = new List<string>();
+			public string Name;
+			public string Level;
+		}
+
+		[Test, TestCaseSource (typeof(ExternalViTestFactory),"ExternalViTestCases")]
+		public void RunExternalViTest (ExternalViTest test)
+		{
+			for (int i = 0; i < test.Input.Count; i++)
+			{
+				string[] sep = {"\n"};
+				string[] stringArray = test.Text[i].Split(sep, StringSplitOptions.None);
+				int col = 1;
+				int line = 1;
+				foreach (string s in stringArray)
+				{
+					col = s.IndexOf('|') + 1;
+					if (col > 0)
+					{
+						break;
+					}
+					line++;
+				}
+				var mode = new TestViEditMode () { Text = test.Text[i].Replace("|", null) };
+				mode.Caret.Line = line;
+				mode.Caret.Column = col;
+				for (int j = 0; j < test.Input[i].Length; j++)
+				{
+					if (test.Input[i][j] == '\\')
+					{
+						j++;
+						if (test.Input[i][j] == '<')
+						{
+							StringBuilder sb = new StringBuilder();
+							j++;
+							do
+							{
+								sb.Append(test.Input[i][j]);
+								j++;
+							}
+							while (test.Input[i][j] != '>');
+							mode = TestViEditMode.ParseViTestKeypress(mode, sb.ToString());
+						}
+						else if (test.Input[i][j] == 'n')
+						{
+							mode.Input(Gdk.Key.Return, 0, Gdk.ModifierType.None);
+						}
+						else throw new Exception("Unrecognized escape sequence:" + test.Input[i]);
+					}
+					else 
+					{
+						mode.Input(test.Input[i][j]);
+						if (mode.Caret.Offset < 0) mode.Caret.Offset = 0;
+					}
+				}
+				mode.Text = mode.Text.Insert(mode.Caret.Offset, "|");
+				Assert.AreEqual(test.Text[i + 1], mode.Text);
+			}
+		}
+
+		public class ExternalViTestFactory
+		{
+			public static IEnumerable ExternalViTestCases
+			{
+				get
+				{
+					List<ExternalViTest> tests = TestViEditMode.ParseExternalViTests ();
+					foreach (ExternalViTest test in tests) 
+					{
+						yield return new TestCaseData(test)
+							.Returns (null)
+							.SetName(test.Level + " " + test.Name);
+					}
+				}
+			}
+		}
+
 	}
 	
 	class TestViEditMode : ViEditMode
@@ -299,7 +384,11 @@ kkk lll", mode.Text);
 		public new Caret Caret {
 			get { return base.Caret; }
 		}
-		
+
+		public new TextEditor Editor {
+			get { return base.Editor; }
+		}
+
 		public int Col {
 			get { return Caret.Column; }
 		}
@@ -337,7 +426,9 @@ kkk lll", mode.Text);
 		public void Input (Gdk.Key key, uint unicodeKey, Gdk.ModifierType modifier)
 		{
 			inputting = true;
+			this.editor =  new TextEditor(Data.Document); 
 			HandleKeypress (key, unicodeKey, modifier);
+			this.editor = null;
 			inputting = false;
 		}
 		
@@ -361,6 +452,103 @@ kkk lll", mode.Text);
 			Assert.AreEqual (leadLine, sel.Lead.Line);
 			Assert.AreEqual (leadCol, sel.Lead.Column);
 		}
+
+		public static List<ViTests.ExternalViTest> ParseExternalViTests ()
+		{
+			List<ViTests.ExternalViTest> parsedTests = new List<ViTests.ExternalViTest>();
+			List<string> testStrings = ReadExternalViTests();
+			string[] sep = {"\n"};
+			foreach (string testString in testStrings)
+			{
+				string[] testArray = testString.Split (sep, StringSplitOptions.None);
+				bool newline = false;
+				StringBuilder textSB = new StringBuilder();
+				ViTests.ExternalViTest test = new ViTests.ExternalViTest();
+				string level = "";
+				foreach (string s in testArray) 
+				{
+					if (!String.IsNullOrEmpty(s) && (s[0] != '#')) 
+					{
+						if (s.StartsWith(":level"))
+						{
+							level = s.Remove(0,7);
+						}
+
+						else if (s.StartsWith(":start"))
+					    {
+							test = new ViTests.ExternalViTest();
+							test.Name = s.Remove(0,7);
+						}
+
+						else if (s.StartsWith(":type"))
+						{
+							test.Text.Add(textSB.ToString());
+							textSB.Clear();
+							test.Input.Add(s.Remove(0,6));
+							newline = false;
+						}
+
+						else if (s.StartsWith(":end"))
+						{
+							test.Text.Add(textSB.ToString());
+							textSB.Clear();
+							test.Level = level;
+							parsedTests.Add(test);
+							newline = false;
+						}
+
+						else 
+						{
+							if (newline) textSB.Append("\n");
+							//Append text, stripping out indent
+							textSB.Append(s.Remove(0,1));
+							newline = true;
+						}
+					}
+				}
+			}
+			return parsedTests;
+		}
+
+		public static TestViEditMode ParseViTestKeypress(TestViEditMode mode, string key)
+		{
+			switch (key)
+			{
+			case "esc":
+				mode.Input(Gdk.Key.Escape, 0, Gdk.ModifierType.None);
+				break;
+			case "NL":
+				mode.Input(Gdk.Key.Return, 0, Gdk.ModifierType.None);
+				break;
+			default:
+				throw new Exception("Unrecognized keypress:" + key);
+			}
+			return mode;
+		}
+
+		public static List<string> ReadExternalViTests()
+		{
+			List<string> tests = new List<string>();
+			string[] subdirs = Directory.GetDirectories(@"Mono.TextEditor.Tests/ExternalViModeTests");
+			foreach (string subdir in subdirs)
+			{
+				string[] files = Directory.GetFiles(subdir);
+				foreach (string file in files)
+				{
+					using (StreamReader sr = new StreamReader(file))
+					{
+						StringBuilder sb = new StringBuilder();
+						string[] fileName = subdir.Split('/');
+						string level = fileName[fileName.Length - 1];
+						sb.Append(":level " + level + "\n");
+						sb.Append(sr.ReadToEnd());
+						tests.Add(sb.ToString());
+					}
+				}
+			}
+			return tests;
+		}
+
 	}
 }
 

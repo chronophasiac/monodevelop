@@ -39,7 +39,7 @@ namespace Mono.TextEditor.Vi
 		{
 			Action<ViEditor> a;
 			if (actions.TryGetValue (ctx.LastKey, out a)) {
-				ctx.RunAction (a);
+				ctx.RunActions (a);
 				return true;
 			} else {
 				BuilderAction b;
@@ -66,6 +66,11 @@ namespace Mono.TextEditor.Vi
 		public void Add (ViKey key, Action<TextEditorData> action)
 		{
 			this.actions[key] = (ViEditor ed) => action (ed.Data);
+		}
+
+		public void Add (ViKey key, Action<ViMotionContext> context)
+		{
+			this.actions[key] = (ViEditor ed) => context (new ViMotionContext(ed.Data));
 		}
 		
 		public void Add (ViKey key, ViBuilder builder)

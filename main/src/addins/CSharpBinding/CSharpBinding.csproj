@@ -11,9 +11,9 @@
     <RootNamespace>CSharpBinding</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>True</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>False</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>..\..\..\build\AddIns\BackendBindings\</OutputPath>
     <DefineConstants>GMCS_SOURCE;NET_2_0;MS_COMPATIBLE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -21,11 +21,11 @@
     <Execution>
       <Execution clr-version="Net_2_0" />
     </Execution>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
-    <Optimize>True</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>..\..\..\build\AddIns\BackendBindings\</OutputPath>
     <DefineConstants>GMCS_SOURCE;NET_2_0;MS_COMPATIBLE;FULL_AST;BOOTSTRAP_BASIC</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -33,7 +33,7 @@
     <Execution>
       <Execution clr-version="Net_2_0" />
     </Execution>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\core\MonoDevelop.Core\MonoDevelop.Core.csproj">

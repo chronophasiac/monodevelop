@@ -1645,7 +1645,7 @@ namespace Mono.TextEditor
 
 				int offset = Document.LocationToOffset (clickLocation);
 				if (offset < 0) {
-					textEditor.RunAction (CaretMoveActions.ToDocumentEnd);
+					textEditor.RunActions (CaretMoveActions.ToDocumentEnd);
 					return;
 				}
 				if (args.Button == 2 && selection != null && selection.Contains (Document.OffsetToLocation (offset))) {

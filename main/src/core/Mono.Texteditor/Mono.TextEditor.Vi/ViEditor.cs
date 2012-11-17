@@ -94,7 +94,7 @@ namespace Mono.TextEditor.Vi
 				if (Data.Caret.Column > DocumentLocation.MinColumn)
 					Data.Caret.Column--;
 			}
-			ViActions.RetreatFromLineEnd (Data);
+			ViEditMode.RetreatFromLineEnd (Data);
 		}
 		
 		public void SetMode (ViEditorMode mode)
@@ -129,7 +129,7 @@ namespace Mono.TextEditor.Vi
 			case ViEditorMode.Visual:
 				return;
 			case ViEditorMode.Normal:
-				ViActions.RetreatFromLineEnd (Data);
+				ViEditMode.RetreatFromLineEnd (Data);
 				break;
 			default:
 				Reset ("");

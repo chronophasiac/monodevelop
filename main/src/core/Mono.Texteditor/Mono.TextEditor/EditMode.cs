@@ -188,18 +188,6 @@ namespace Mono.TextEditor
 		{
 		}
 		
-		protected void RunAction (Action<TextEditorData> action)
-		{
-			HideMouseCursor ();
-			try {
-				using (var undo = Document.OpenUndoGroup ()) {
-					action (this.textEditorData);
-				}
-			} catch (Exception e) {
-				Console.WriteLine ("Error while executing action " + action.ToString () + " :" + e);
-			}
-		}
-		
 		protected void RunActions (params Action<TextEditorData>[] actions)
 		{
 			HideMouseCursor ();
@@ -209,14 +197,31 @@ namespace Mono.TextEditor
 						action (this.textEditorData);
 				}
 			} catch (Exception e) {
-				var sb = new System.Text.StringBuilder ("Error while executing actions ");
+				var sb = new System.Text.StringBuilder ("Error while executing action(s) ");
 				foreach (var action in actions)
 					sb.AppendFormat (" {0}", action);
 				Console.WriteLine (sb.ToString () + ": " + e);
 			}
 		
 		}
+
+		protected void RunMotions (params Action<Vi.ViMotionContext>[] motions)
+		{
+			HideMouseCursor ();
+			try {
+				using (var undo = Document.OpenUndoGroup ()) {
+					foreach (var motion in motions)
+						motion (new Vi.ViMotionContext(this.Data));
+				}
+			} catch (Exception e) {
+				var sb = new System.Text.StringBuilder ("Error while executing action(s) ");
+				foreach (var action in motions)
+					sb.AppendFormat (" {0}", action);
+				Console.WriteLine (sb.ToString () + ": " + e);
+			}
 		
+		}
+
 		static Dictionary<Gdk.Key, Gdk.Key> keyMappings = new Dictionary<Gdk.Key, Gdk.Key> ();
 		static EditMode ()
 		{

@@ -34,6 +34,7 @@ using System.Text;
 
 using Gtk;
 using Mono.TextEditor.Highlighting;
+using Mono.TextEditor.Vi;
 
 namespace Mono.TextEditor
 {
@@ -49,12 +50,30 @@ namespace Mono.TextEditor
 			};
 		}
 
+		public static Action<ViMotionContext> FromMotion (Action<ViMotionContext> motion)
+		{
+			return delegate (ViMotionContext context) {
+				StartSelection (context.Data);
+				motion (context);
+				EndSelection (context.Data);
+			};
+		}
+
 		public static Action<TextEditorData> LineActionFromMoveAction (Action<TextEditorData> moveAction)
 		{
 			return delegate (TextEditorData data) {
 				StartLineSelection (data);
 				moveAction (data);
 				EndLineSelection (data);
+			};
+		}
+
+		public static Action<ViMotionContext> LineActionFromMotion (Action<ViMotionContext> motion)
+		{
+			return delegate (ViMotionContext context) {
+				StartLineSelection (context.Data);
+				motion (context);
+				EndLineSelection (context.Data);
 			};
 		}
 		

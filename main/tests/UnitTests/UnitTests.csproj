@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -314,6 +314,59 @@
     <None Include="MonoDevelop.Xml.StateEngine\HtmlParsingTests.cs" />
     <None Include="MonoDevelop.AspNet\AspNetCompletionTests.cs" />
     <None Include="MonoDevelop.AspNet\AspNetTesting.cs" />
+    <None Include="Mono.TextEditor.Tests\ExternalViModeTests\level0\basics.vimunit">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Mono.TextEditor.Tests\ExternalViModeTests\level1\insertion.vimunit">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Mono.TextEditor.Tests\ExternalViModeTests\level1\motion.vimunit">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Mono.TextEditor.Tests\ExternalViModeTests\level1\yanks.vimunit">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Mono.TextEditor.Tests\ExternalViModeTests\level2\repetition.vimunit">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Mono.TextEditor.Tests\ExternalViModeTests\level2\search.vimunit">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Mono.TextEditor.Tests\ExternalViModeTests\level2\undo.vimunit">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Mono.TextEditor.Tests\ExternalViModeTests\level2\visual.vimunit">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Mono.TextEditor.Tests\ExternalViModeTests\level2\wordwise.vimunit">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Mono.TextEditor.Tests\ExternalViModeTests\level3\level3.vimunit">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Mono.TextEditor.Tests\ExternalViModeTests\level3\macros.vimunit">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Mono.TextEditor.Tests\ExternalViModeTests\level3\motions.vimunit">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Mono.TextEditor.Tests\ExternalViModeTests\level3\replace.vimunit">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="MonoDevelop.AspNet\" />
+    <Folder Include="MonoDevelop.VersionControl.Views\" />
+    <Folder Include="MonoDevelop.VersionControl.Git\" />
+    <Folder Include="MonoDevelop.Ide.Gui\" />
+    <Folder Include="MonoDevelop.CSharpBinding.Refactoring\" />
+    <Folder Include="MonoDevelop.Ide.FindInFiles\" />
+    <Folder Include="MonoDevelop.SourceEditor\" />
+    <Folder Include="MonoDevelop.Core\" />
+    <Folder Include="Mono.TextEditor.Tests\ExternalViModeTests\" />
+    <Folder Include="Mono.TextEditor.Tests\ExternalViModeTests\level0\" />
+    <Folder Include="Mono.TextEditor.Tests\ExternalViModeTests\level1\" />
+    <Folder Include="Mono.TextEditor.Tests\ExternalViModeTests\level2\" />
+    <Folder Include="Mono.TextEditor.Tests\ExternalViModeTests\level3\" />
+  </ItemGroup>
 </Project>
