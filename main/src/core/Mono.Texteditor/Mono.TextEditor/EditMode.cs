@@ -205,14 +205,15 @@ namespace Mono.TextEditor
 		
 		}
 
-		protected void RunMotions (params Action<Vi.ViMotionContext>[] motions)
+		protected void RunMotions (params Func<Vi.ViMotionContext, Vi.ViMotionResult>[] motions)
 		{
 			HideMouseCursor ();
 			try {
 				using (var undo = Document.OpenUndoGroup ()) {
 					foreach (var motion in motions)
-						motion (new Vi.ViMotionContext(this.Data));
+						(motion (new Vi.ViMotionContext(this.Data, Vi.ViEditMode.count))).ApplyTo(this.Data);
 				}
+				Vi.ViEditMode.count = null;
 			} catch (Exception e) {
 				var sb = new System.Text.StringBuilder ("Error while executing action(s) ");
 				foreach (var action in motions)

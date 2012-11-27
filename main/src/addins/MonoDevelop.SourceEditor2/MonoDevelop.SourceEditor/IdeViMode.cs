@@ -69,14 +69,14 @@ namespace MonoDevelop.SourceEditor
 			}
 		}
 		
-		protected override Action<ViMotionContext> GetInsertAction (Gdk.Key key, Gdk.ModifierType modifier)
+		protected override Func<ViMotionContext, ViMotionResult> GetInsertAction (Gdk.Key key, Gdk.ModifierType modifier)
 		{
 			if (modifier == Gdk.ModifierType.None) {
 				switch (key) {
 				case Gdk.Key.BackSpace:
-					return ViMotionContext.ViDataToContext(EditActions.AdvancedBackspace);
+					return ViMotionResult.DoMotion(ViMotionContext.ViDataToContext(EditActions.AdvancedBackspace));
 				case Gdk.Key.Tab:
-					return ViMotionContext.ViDataToContext(tabAction.Action);
+					return ViMotionResult.DoMotion(ViMotionContext.ViDataToContext(tabAction.Action));
 				}
 			}
 			return base.GetInsertAction (key, modifier);

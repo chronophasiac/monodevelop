@@ -50,12 +50,13 @@ namespace Mono.TextEditor
 			};
 		}
 
-		public static Action<ViMotionContext> FromMotion (Action<ViMotionContext> motion)
+		public static Func<ViMotionContext, ViMotionResult> FromMotion (Func<ViMotionContext, ViMotionResult> motion)
 		{
-			return delegate (ViMotionContext context) {
+			return (ViMotionContext context) => {
 				StartSelection (context.Data);
-				motion (context);
+				ViMotionResult res = motion (context);
 				EndSelection (context.Data);
+				return res;
 			};
 		}
 
@@ -68,12 +69,13 @@ namespace Mono.TextEditor
 			};
 		}
 
-		public static Action<ViMotionContext> LineActionFromMotion (Action<ViMotionContext> motion)
+		public static Func<ViMotionContext, ViMotionResult> LineActionFromMotion (Func<ViMotionContext, ViMotionResult> motion)
 		{
-			return delegate (ViMotionContext context) {
+			return (ViMotionContext context) => {
 				StartLineSelection (context.Data);
-				motion (context);
+				ViMotionResult res = motion (context);
 				EndLineSelection (context.Data);
+				return res;
 			};
 		}
 		

@@ -110,9 +110,8 @@ namespace Mono.TextEditor.Vi
 		Dictionary<char,ViMacro> macros = new Dictionary<char, ViMacro>();
 		char macros_lastplayed = '@'; // start with the illegal macro character
 		string statusText = "";
-		Action lastCommand;
-		List<Action> recordedAction;
-		
+		public static int? count;
+
 		/// <summary>
 		/// The macro currently being implemented. Will be set to null and checked as a flag when required.
 		/// </summary>
@@ -292,7 +291,7 @@ namespace Mono.TextEditor.Vi
 			Status = status;
 		}
 		
-		protected virtual Action<ViMotionContext> GetInsertAction (Gdk.Key key, Gdk.ModifierType modifier)
+		protected virtual Func<ViMotionContext, ViMotionResult> GetInsertAction (Gdk.Key key, Gdk.ModifierType modifier)
 		{
 			return ViActionMaps.GetInsertKeyAction (key, modifier) ??
 				ViActionMaps.GetDirectionKeyAction (key, modifier);
@@ -399,38 +398,6 @@ namespace Mono.TextEditor.Vi
 			return "Performed replacement.";
 		}
 
-		public void DoAction (Action act, bool insertMode = false)
-		{
-			if (insertMode) {
-				recordedAction = recordedAction ?? new List<Action>();
-				recordedAction.Add (act);
-			} else {
-				recordedAction = null;
-				lastCommand = act;
-			}
-			act();
-		}
-
-		public void RepeatAction ()
-		{
-			if (recordedAction != null) {
-				RunActions (CaretMoveActions.Right);
-				Caret.Mode = CaretMode.Insert;
-				foreach (Action act in recordedAction) {
-					act();
-				}
-			}
-			else {
-				if (lastCommand != null)
-					lastCommand ();
-			}
-		}
-
-		public void ClearRecordedAction ()
-		{
-			recordedAction = null;
-		}
-
 		public void ApplyActionToSelection (Gdk.ModifierType modifier, uint unicodeKey)
 		{
 			if (Data.IsSomethingSelected && (modifier & (Gdk.ModifierType.ControlMask)) == 0) {
@@ -485,9 +452,9 @@ namespace Mono.TextEditor.Vi
 			}
 		}
 
-		public static Action<ViMotionContext> VisualSelectionFromMotion (Action<ViMotionContext> motion)
+		public static Func<ViMotionContext, ViMotionResult> VisualSelectionFromMotion (Func<ViMotionContext, ViMotionResult> motion)
 		{
-			return delegate (ViMotionContext context) {
+			return (ViMotionContext context) => {
 				//get info about the old selection state
 				DocumentLocation oldCaret = context.Data.Caret.Location, oldAnchor = oldCaret, oldLead = oldCaret;
 				if (context.Data.MainSelection != null) {
@@ -497,7 +464,7 @@ namespace Mono.TextEditor.Vi
 				
 				//do the action, preserving selection
 				SelectionActions.StartSelection (context.Data);
-				motion (context);
+				ViMotionResult res = motion (context);
 				SelectionActions.EndSelection (context.Data);
 				
 				DocumentLocation newCaret = context.Data.Caret.Location, newAnchor = newCaret, newLead = newCaret;
@@ -519,21 +486,22 @@ namespace Mono.TextEditor.Vi
 				//pivot the lead about the anchor character
 				if (newAnchor == newLead) {
 					if (oldAnchor < oldLead)
-						SelectionActions.FromMotion (ViMotionsAndCommands.Left) (context);
+						SelectionActions.FromMotion (ViMotionResult.DoMotion (ViMotionsAndCommands.Left)) (context);
 					else
-						SelectionActions.FromMotion (ViMotionsAndCommands.Right) (context);
+						SelectionActions.FromMotion (ViMotionResult.DoMotion (ViMotionsAndCommands.Right)) (context);
 				}
 				//pivot around the anchor line
 				else {
 					if (oldAnchor < oldLead && newAnchor > newLead && (
 							(newLead.Line == newAnchor.Line && oldLead.Line == oldAnchor.Line + 1) ||
 						    (newLead.Line == newAnchor.Line - 1 && oldLead.Line == oldAnchor.Line)))
-						SelectionActions.FromMotion (ViMotionsAndCommands.Left) (context);
+						SelectionActions.FromMotion (ViMotionResult.DoMotion (ViMotionsAndCommands.Left)) (context);
 					else if (oldAnchor > oldLead && newAnchor < newLead && (
 							(newLead.Line == newAnchor.Line && oldLead.Line == oldAnchor.Line - 1) ||
 							(newLead.Line == newAnchor.Line + 1 && oldLead.Line == oldAnchor.Line)))
-						SelectionActions.FromMotion (ViMotionsAndCommands.Right) (context);
+						SelectionActions.FromMotion (ViMotionResult.DoMotion (ViMotionsAndCommands.Right)) (context);
 				}
+				return res;
 			};
 		}
 
@@ -606,7 +574,7 @@ namespace Mono.TextEditor.Vi
 							RunActions (ClipboardActions.Cut);
 						else RunActions (CaretMoveActions.Right);
 						data.InsertAtCaret (contents);
-						RunMotions (ViMotionsAndCommands.Left);
+						RunMotions (ViMotionResult.DoMotion(ViMotionsAndCommands.Left));
 					}
 					Reset (string.Empty);
 				});
@@ -653,7 +621,7 @@ namespace Mono.TextEditor.Vi
 						if (data.IsSomethingSelected) 
 							RunActions (ClipboardActions.Cut);
 						data.InsertAtCaret (contents);
-						RunMotions (ViMotionsAndCommands.Left);
+						RunMotions (ViMotionResult.DoMotion(ViMotionsAndCommands.Left));
 					}
 					Reset (string.Empty);
 				});

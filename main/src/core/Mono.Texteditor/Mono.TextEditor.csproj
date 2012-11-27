@@ -206,6 +206,7 @@
     <Compile Include="Mono.TextEditor.Vi\ViMotions.cs" />
     <Compile Include="Mono.TextEditor.Vi\ViCommands.cs" />
     <Compile Include="Mono.TextEditor.Vi\ViMotionContext.cs" />
+    <Compile Include="Mono.TextEditor.Vi\ViMotionResult.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Mono.TextEditor.dll.config">

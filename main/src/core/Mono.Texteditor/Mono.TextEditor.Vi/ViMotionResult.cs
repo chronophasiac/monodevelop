@@ -1,5 +1,5 @@
 //
-// ViMotionContext.cs
+// ViMotionResult.cs
 //
 // Author:
 //       Michael Raimondi <zeno@pobox.com>
@@ -27,21 +27,33 @@ using System;
 
 namespace Mono.TextEditor.Vi
 {
-	public class ViMotionContext
+	public class ViMotionResult
 	{
-		public TextEditorData Data = new TextEditorData ();
-		public int? Count;
+		public int Line;
+		public int Column;
 
-		public ViMotionContext (TextEditorData data, int? count = 1)
+		public ViMotionResult (int line, int column)
 		{
-			this.Data = data;
-			this.Count = count;
+			this.Line = line;
+			this.Column = column;
 		}
 
-		public static Action<ViMotionContext> ViDataToContext (Action<TextEditorData> action)
+		public TextEditorData ApplyTo (TextEditorData data)
 		{
-			return (ViMotionContext context) => {
-				action(context.Data);
+			data.Caret.Line = this.Line;
+			data.Caret.Column = this.Column;
+			return data;
+		}
+
+		public static Func<ViMotionContext, ViMotionResult> DoMotion (Action<ViMotionContext> action)
+		{
+			return (ViMotionContext context) => { int line = context.Data.Caret.Line;
+				int column = context.Data.Caret.Column; 
+				action(context);
+				ViMotionResult motionResult = new ViMotionResult(context.Data.Caret.Line, context.Data.Caret.Column);
+				context.Data.Caret.Line = line;
+				context.Data.Caret.Column = column;
+				return motionResult;
 			};
 		}
 	}
