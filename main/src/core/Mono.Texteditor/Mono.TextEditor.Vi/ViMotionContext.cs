@@ -31,6 +31,8 @@ namespace Mono.TextEditor.Vi
 	{
 		public TextEditorData Data = new TextEditorData ();
 		public int? Count;
+		public int? StartingLine;
+		public int? StartingColumn;
 
 		public ViMotionContext (TextEditorData data, int? count = 1)
 		{

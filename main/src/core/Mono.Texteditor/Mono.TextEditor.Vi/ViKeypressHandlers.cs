@@ -269,6 +269,14 @@ namespace Mono.TextEditor.Vi
 					}
 					else count = inc;
 					return;
+				case '0':
+					if (Vi.ViEditMode.count.HasValue) 
+					{
+						Vi.ViEditMode.count *= 10; 
+						return;
+					}
+					else RunMotions(ViMotionResult.DoMotion(ViMotionContext.ViDataToContext(CaretMoveActions.LineStart)));
+					return;
 				}
 					
 			}

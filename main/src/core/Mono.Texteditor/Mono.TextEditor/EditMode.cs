@@ -211,9 +211,16 @@ namespace Mono.TextEditor
 			try {
 				using (var undo = Document.OpenUndoGroup ()) {
 					foreach (var motion in motions)
-						(motion (new Vi.ViMotionContext(this.Data, Vi.ViEditMode.count))).ApplyTo(this.Data);
+					{
+						if (Vi.ViEditMode.count.HasValue)
+						{
+							Vi.ViMotionResult result = Vi.ViMotionResult.RepeatMotion(new Vi.ViMotionContext(this.Data, Vi.ViEditMode.count),motion);
+							result.ApplyTo(this.Data);
+							Vi.ViEditMode.count = null;
+						}
+						else motion (new Vi.ViMotionContext(this.Data)).ApplyTo(this.Data);
+					}
 				}
-				Vi.ViEditMode.count = null;
 			} catch (Exception e) {
 				var sb = new System.Text.StringBuilder ("Error while executing action(s) ");
 				foreach (var action in motions)

@@ -52,7 +52,7 @@ namespace Mono.TextEditor.Vi
 		{
 			switch (c) {
 			case 'h':
-				return ViMotionResult.DoMotion(ViMotionsAndCommands.Left);
+				return ViMotionsAndCommands.Left;
 			case 'b':
 				return ViMotionResult.DoMotion(ViMotionsAndCommands.PreviousSubword);
 			case 'B':
@@ -69,8 +69,6 @@ namespace Mono.TextEditor.Vi
 				return ViMotionResult.DoMotion(ViMotionsAndCommands.Down);
 			case '%':
 				return ViMotionResult.DoMotion(ViMotionContext.ViDataToContext(MiscActions.GotoMatchingBracket));
-			case '0':
-				return ViMotionResult.DoMotion(ViMotionContext.ViDataToContext(CaretMoveActions.LineStart));
 			case '^':
 			case '_':
 				return ViMotionResult.DoMotion(ViMotionContext.ViDataToContext(CaretMoveActions.LineFirstNonWhitespace));
@@ -95,7 +93,7 @@ namespace Mono.TextEditor.Vi
 				switch (key) {
 				case Gdk.Key.Left:
 				case Gdk.Key.KP_Left:
-					return ViMotionResult.DoMotion(ViMotionsAndCommands.Left);
+					return ViMotionsAndCommands.Left;
 					
 				case Gdk.Key.Right:
 				case Gdk.Key.KP_Right:

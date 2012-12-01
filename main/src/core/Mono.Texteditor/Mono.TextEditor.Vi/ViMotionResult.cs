@@ -31,30 +31,52 @@ namespace Mono.TextEditor.Vi
 	{
 		public int Line;
 		public int Column;
+		public int? Offset;
 
-		public ViMotionResult (int line, int column)
+		public ViMotionResult (int line, int column, int? offset = null)
 		{
 			this.Line = line;
 			this.Column = column;
+			this.Offset = offset;
 		}
 
 		public TextEditorData ApplyTo (TextEditorData data)
 		{
 			data.Caret.Line = this.Line;
 			data.Caret.Column = this.Column;
+			if (this.Offset.HasValue)
+				data.Caret.Offset = this.Offset.Value;
 			return data;
 		}
 
-		public static Func<ViMotionContext, ViMotionResult> DoMotion (Action<ViMotionContext> action)
+		public static Func<ViMotionContext, ViMotionResult> DoMotion (Action<ViMotionContext> motion)
 		{
-			return (ViMotionContext context) => { int line = context.Data.Caret.Line;
+			return (ViMotionContext context) => { 
+				if (context.StartingLine.HasValue) context.Data.Caret.Line = context.StartingLine.Value;
+				if (context.StartingColumn.HasValue) context.Data.Caret.Column = context.StartingColumn.Value;
+				int line = context.Data.Caret.Line;
 				int column = context.Data.Caret.Column; 
-				action(context);
-				ViMotionResult motionResult = new ViMotionResult(context.Data.Caret.Line, context.Data.Caret.Column);
+				motion(context);
+				ViMotionResult result = new ViMotionResult(context.Data.Caret.Line, context.Data.Caret.Column);
 				context.Data.Caret.Line = line;
 				context.Data.Caret.Column = column;
-				return motionResult;
+				return result;
 			};
+		}
+
+		public static ViMotionResult RepeatMotion (ViMotionContext context, Func<ViMotionContext, ViMotionResult> motion)
+		{
+			ViMotionResult result = null;
+			int count = context.Count ?? 1;
+			for (int i = 0; i < count; i++)
+			{
+				result = motion(context);
+				context.StartingLine = result.Line;
+				context.StartingColumn = result.Column;
+			}
+			context.StartingLine = null;
+			context.StartingColumn = null;
+			return result;
 		}
 	}
 }

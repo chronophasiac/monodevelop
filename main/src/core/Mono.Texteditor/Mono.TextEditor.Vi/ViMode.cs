@@ -485,17 +485,19 @@ namespace Mono.TextEditor.Vi
 				
 				//pivot the lead about the anchor character
 				if (newAnchor == newLead) {
-					if (oldAnchor < oldLead)
-						SelectionActions.FromMotion (ViMotionResult.DoMotion (ViMotionsAndCommands.Left)) (context);
-					else
-						SelectionActions.FromMotion (ViMotionResult.DoMotion (ViMotionsAndCommands.Right)) (context);
+					if (oldAnchor < oldLead) {
+						ViMotionsAndCommands.Left(context).ApplyTo(context.Data);
+					} else {
+						ViMotionResult result = SelectionActions.FromMotion (ViMotionResult.DoMotion (ViMotionsAndCommands.Right)) (context);
+						result.ApplyTo(context.Data);
+					}
 				}
 				//pivot around the anchor line
 				else {
 					if (oldAnchor < oldLead && newAnchor > newLead && (
 							(newLead.Line == newAnchor.Line && oldLead.Line == oldAnchor.Line + 1) ||
 						    (newLead.Line == newAnchor.Line - 1 && oldLead.Line == oldAnchor.Line)))
-						SelectionActions.FromMotion (ViMotionResult.DoMotion (ViMotionsAndCommands.Left)) (context);
+						SelectionActions.FromMotion (ViMotionsAndCommands.Left) (context);
 					else if (oldAnchor > oldLead && newAnchor < newLead && (
 							(newLead.Line == newAnchor.Line && oldLead.Line == oldAnchor.Line - 1) ||
 							(newLead.Line == newAnchor.Line + 1 && oldLead.Line == oldAnchor.Line)))
@@ -528,7 +530,7 @@ namespace Mono.TextEditor.Vi
 			if (data.Caret.Mode == CaretMode.Block && !data.IsSomethingSelected && !data.Caret.PreserveSelection) {
 				while (DocumentLocation.MinColumn < data.Caret.Column && (data.Caret.Offset >= data.Document.TextLength
 				                                 || IsEol (data.Document.GetCharAt (data.Caret.Offset)))) {
-					ViMotionsAndCommands.Left (new ViMotionContext(data));
+					ViMotionsAndCommands.Left (new ViMotionContext(data)).ApplyTo(data);
 				}
 			}
 		}
@@ -574,7 +576,7 @@ namespace Mono.TextEditor.Vi
 							RunActions (ClipboardActions.Cut);
 						else RunActions (CaretMoveActions.Right);
 						data.InsertAtCaret (contents);
-						RunMotions (ViMotionResult.DoMotion(ViMotionsAndCommands.Left));
+						RunMotions (ViMotionsAndCommands.Left);
 					}
 					Reset (string.Empty);
 				});
@@ -621,7 +623,7 @@ namespace Mono.TextEditor.Vi
 						if (data.IsSomethingSelected) 
 							RunActions (ClipboardActions.Cut);
 						data.InsertAtCaret (contents);
-						RunMotions (ViMotionResult.DoMotion(ViMotionsAndCommands.Left));
+						RunMotions (ViMotionsAndCommands.Left);
 					}
 					Reset (string.Empty);
 				});

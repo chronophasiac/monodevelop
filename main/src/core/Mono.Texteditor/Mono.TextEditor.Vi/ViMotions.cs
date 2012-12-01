@@ -28,6 +28,7 @@
 
 using System;
 using System.Text;
+using System.Linq;
 
 namespace Mono.TextEditor.Vi
 {
@@ -81,99 +82,63 @@ namespace Mono.TextEditor.Vi
 		
 		public static void Right (ViMotionContext context)
 		{
-			int count = context.Count ?? 1;
-			for (int i = 0; i < count; i++)
-			{
-				DocumentLine segment = context.Data.Document.GetLine (context.Data.Caret.Line);
-				if (segment.EndOffsetIncludingDelimiter-1 > context.Data.Caret.Offset) {
-					CaretMoveActions.Right (context.Data);
-					ViEditMode.RetreatFromLineEnd (context.Data);
-				}
+			DocumentLine segment = context.Data.Document.GetLine (context.Data.Caret.Line);
+			if (segment.EndOffsetIncludingDelimiter-1 > context.Data.Caret.Offset) {
+				CaretMoveActions.Right (context.Data);
+				ViEditMode.RetreatFromLineEnd (context.Data);
 			}
 		}
 		
-		public static void Left (ViMotionContext context)
+		public static ViMotionResult Left (ViMotionContext context)
 		{
-			int count = context.Count ?? 1;
-			for (int i = 0; i < count; i++)
-			{
-				if (DocumentLocation.MinColumn < context.Data.Caret.Column) {
-					CaretMoveActions.Left (context.Data);
-				}
-			}
+			int startingColumn = context.StartingColumn ?? context.Data.Caret.Column;
+			if (startingColumn > 1) startingColumn--;
+			return new ViMotionResult(context.Data.Caret.Line, startingColumn);
 		}
 		
 		public static void Down (ViMotionContext context)
 		{
-			int count = context.Count ?? 1;
-			for (int i = 0; i < count; i++)
-			{
-				int desiredColumn = System.Math.Max (context.Data.Caret.Column, context.Data.Caret.DesiredColumn);
-				
-				CaretMoveActions.Down (context.Data);
-				ViEditMode.RetreatFromLineEnd (context.Data);
-				
-				context.Data.Caret.DesiredColumn = desiredColumn;
-			}
+			int desiredColumn = System.Math.Max (context.Data.Caret.Column, context.Data.Caret.DesiredColumn);
+			
+			CaretMoveActions.Down (context.Data);
+			ViEditMode.RetreatFromLineEnd (context.Data);
+			
+			context.Data.Caret.DesiredColumn = desiredColumn;
 		}
 		
 		public static void Up (ViMotionContext context)
 		{
-			int count = context.Count ?? 1;
-			for (int i = 0; i < count; i++)
-			{
-				int desiredColumn = System.Math.Max (context.Data.Caret.Column, context.Data.Caret.DesiredColumn);
-				
-				CaretMoveActions.Up (context.Data);
-				ViEditMode.RetreatFromLineEnd (context.Data);
-				
-				context.Data.Caret.DesiredColumn = desiredColumn;
-			}
+			int desiredColumn = System.Math.Max (context.Data.Caret.Column, context.Data.Caret.DesiredColumn);
+			
+			CaretMoveActions.Up (context.Data);
+			ViEditMode.RetreatFromLineEnd (context.Data);
+			
+			context.Data.Caret.DesiredColumn = desiredColumn;
 		}
 
 		public static void NextSubword (ViMotionContext context)
 		{
-			int count = context.Count ?? 1;
-			for (int i = 0; i < count; i++)
-			{
-				context.Data.Caret.Offset = context.Data.FindNextSubwordOffset (context.Data.Caret.Offset);
-			}
+			context.Data.Caret.Offset = context.Data.FindNextSubwordOffset (context.Data.Caret.Offset);
 		}
 
 		public static void NextWord (ViMotionContext context)
 		{
-			int count = context.Count ?? 1;
-			for (int i = 0; i < count; i++)
-			{
-				context.Data.Caret.Offset = context.Data.FindNextWordOffset (context.Data.Caret.Offset);
-			}
+			context.Data.Caret.Offset = context.Data.FindNextWordOffset (context.Data.Caret.Offset);
 		}
 
 		public static void PreviousWord (ViMotionContext context)
 		{
-			int count = context.Count ?? 1;
-			for (int i = 0; i < count; i++)
-			{
-				context.Data.Caret.Offset = context.Data.FindPrevWordOffset (context.Data.Caret.Offset);
-			}
+			context.Data.Caret.Offset = context.Data.FindPrevWordOffset (context.Data.Caret.Offset);
 		}
 		
 		public static void PreviousSubword (ViMotionContext context)
 		{
-			int count = context.Count ?? 1;
-			for (int i = 0; i < count; i++)
-			{
-				context.Data.Caret.Offset = context.Data.FindPrevSubwordOffset (context.Data.Caret.Offset);
-			}
+			context.Data.Caret.Offset = context.Data.FindPrevSubwordOffset (context.Data.Caret.Offset);
 		}
 		
 		public static void WordEnd (ViMotionContext context)
 		{
-			int count = context.Count ?? 1;
-			for (int i = 0; i < count; i++)
-			{
-				context.Data.Caret.Offset = context.Data.FindCurrentWordEnd (context.Data.Caret.Offset);
-			}
+			context.Data.Caret.Offset = context.Data.FindCurrentWordEnd (context.Data.Caret.Offset);
 		}
 		
 		public static void WordStart (ViMotionContext context)

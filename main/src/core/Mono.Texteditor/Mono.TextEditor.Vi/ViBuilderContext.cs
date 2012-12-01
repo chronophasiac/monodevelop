@@ -216,7 +216,7 @@ namespace Mono.TextEditor.Vi
 		
 		static ViCommandMap motions = new ViCommandMap () {
 			{ '`', ViBuilders.GoToMark },
-			{ 'h', ViMotionResult.DoMotion(ViMotionsAndCommands.Left) },
+			{ 'h', ViMotionsAndCommands.Left },
 			{ 'b', CaretMoveActions.PreviousSubword },
 			{ 'B', CaretMoveActions.PreviousWord },
 			{ 'l', ViMotionResult.DoMotion(ViMotionsAndCommands.Right) },
@@ -235,8 +235,8 @@ namespace Mono.TextEditor.Vi
 		};
 		
 		static ViCommandMap nonCharMotions = new ViCommandMap () {
-			{ Key.Left,         ViMotionResult.DoMotion(ViMotionsAndCommands.Left) },
-			{ Key.KP_Left,      ViMotionResult.DoMotion(ViMotionsAndCommands.Left) },
+			{ Key.Left,         ViMotionsAndCommands.Left },
+			{ Key.KP_Left,      ViMotionsAndCommands.Left },
 			{ Key.Right,        ViMotionResult.DoMotion(ViMotionsAndCommands.Right) },
 			{ Key.KP_Right,     ViMotionResult.DoMotion(ViMotionsAndCommands.Right) },
 			{ Key.Up,           ViMotionResult.DoMotion(ViMotionsAndCommands.Up) },
