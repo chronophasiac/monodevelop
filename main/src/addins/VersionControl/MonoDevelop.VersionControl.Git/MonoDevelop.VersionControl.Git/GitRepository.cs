@@ -811,7 +811,20 @@ namespace MonoDevelop.VersionControl.Git
 
 		public override void RevertRevision (FilePath localPath, Revision revision, IProgressMonitor monitor)
 		{
-			throw new System.NotImplementedException ();
+			var git = new NGit.Api.Git (GetRepository (localPath));
+			var gitRev = (GitRevision)revision;
+			var revert = git.Revert ().Include (gitRev.Commit.ToObjectId ());
+			var newRevision = revert.Call ();
+
+			var revertResult = revert.GetFailingResult ();
+			if (revertResult == null) {
+				monitor.ReportSuccess (GettextCatalog.GetString ("Revision {0} successfully reverted", gitRev));
+			} else {
+				var errorMessage = GettextCatalog.GetString ("Could not revert commit {0}", gitRev);
+				var description = GettextCatalog.GetString ("The following files had merge conflicts");
+				description += Environment.NewLine + string.Join (Environment.NewLine, revertResult.GetFailingPaths ().Keys);
+				monitor.ReportError (errorMessage, new UserException (errorMessage, description));
+			} 
 		}
 
 
@@ -930,7 +943,10 @@ namespace MonoDevelop.VersionControl.Git
 
 		string GetCommitTextContent (RevCommit c, FilePath file)
 		{
-			return Mono.TextEditor.Utils.TextFileUtility.GetText (GetCommitContent (c, file));
+			var content = GetCommitContent (c, file);
+			if (RawText.IsBinary (content))
+				return null;
+			return Mono.TextEditor.Utils.TextFileUtility.GetText (content);
 		}
 		
 		string GenerateDiff (byte[] data1, byte[] data2)

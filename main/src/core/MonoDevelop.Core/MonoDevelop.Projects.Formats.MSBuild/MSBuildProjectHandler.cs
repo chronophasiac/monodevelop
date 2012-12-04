@@ -398,13 +398,18 @@ namespace MonoDevelop.Projects.Formats.MSBuild
 		{
 			var projectLoadMonitor = monitor as IProjectLoadProgressMonitor;
 			if (projectLoadMonitor == null) {
+				// projectLoadMonitor will be null when running through md-tool, but
+				// this is not fatal if migration is not required, so just ignore it. --abock
+				if (!st.IsMigrationRequired)
+					return null;
+
 				LoggingService.LogError (Environment.StackTrace);
 				monitor.ReportError ("Could not open unmigrated project and no migrator was supplied", null);
 				throw new Exception ("Could not open unmigrated project and no migrator was supplied");
 			}
 			
 			var migrationType = st.MigrationHandler.CanPromptForMigration
-				? st.MigrationHandler.PromptForMigration()
+				? st.MigrationHandler.PromptForMigration (projectLoadMonitor, p, fileName, language)
 				: projectLoadMonitor.ShouldMigrateProject ();
 			if (migrationType == MigrationType.Ignore) {
 				if (st.IsMigrationRequired) {
@@ -1806,7 +1811,7 @@ namespace MonoDevelop.Projects.Formats.MSBuild
 			if (instance is ProjectFile)
 				return prop.IsExtendedProperty (typeof(ProjectFile));
 			if (instance is ProjectReference)
-				return prop.IsExtendedProperty (typeof(ProjectReference)) || prop.Name == "Package";
+				return prop.IsExtendedProperty (typeof(ProjectReference)) || prop.Name == "Package" || prop.Name == "Aliases";
 			if (instance is DotNetProjectConfiguration)
 				if (prop.Name == "CodeGeneration")
 					return false;
