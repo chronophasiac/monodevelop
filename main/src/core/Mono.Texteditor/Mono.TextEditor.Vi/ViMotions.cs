@@ -29,6 +29,7 @@
 using System;
 using System.Text;
 using System.Linq;
+using Mono.TextEditor;
 
 namespace Mono.TextEditor.Vi
 {
@@ -36,6 +37,8 @@ namespace Mono.TextEditor.Vi
 	
 	public partial class ViMotionsAndCommands
 	{
+		private static int PersistColumn = 0;
+
 		public static void MoveToNextEmptyLine (ViMotionContext context)
 		{
 			if (context.Data.Caret.Line == context.Data.Document.LineCount) {
@@ -80,70 +83,152 @@ namespace Mono.TextEditor.Vi
 			context.Data.Caret.Offset = currentLine.Offset;
 		}
 		
-		public static void Right (ViMotionContext context)
+		public static ViMotionResult Right (ViMotionContext context)
 		{
-			DocumentLine segment = context.Data.Document.GetLine (context.Data.Caret.Line);
-			if (segment.EndOffsetIncludingDelimiter-1 > context.Data.Caret.Offset) {
-				CaretMoveActions.Right (context.Data);
-				ViEditMode.RetreatFromLineEnd (context.Data);
+			ViMotionResult result = new ViMotionResult(context);
+			DocumentLine currentLine = context.Data.Document.GetLine (context.Data.Caret.Line);
+			if (currentLine.EndOffsetIncludingDelimiter-1 > context.Data.Caret.Offset) {
+				result.Column += (context.Count ?? 1);
+				if (result.Column > currentLine.Length)
+					result.Column = currentLine.Length;
+				result = ViEditMode.RetreatFromLineEnd (context, result);
 			}
+			return result;
 		}
-		
+
 		public static ViMotionResult Left (ViMotionContext context)
 		{
-			int startingColumn = context.StartingColumn ?? context.Data.Caret.Column;
-			if (startingColumn > 1) startingColumn--;
-			return new ViMotionResult(context.Data.Caret.Line, startingColumn);
-		}
-		
-		public static void Down (ViMotionContext context)
-		{
-			int desiredColumn = System.Math.Max (context.Data.Caret.Column, context.Data.Caret.DesiredColumn);
-			
-			CaretMoveActions.Down (context.Data);
-			ViEditMode.RetreatFromLineEnd (context.Data);
-			
-			context.Data.Caret.DesiredColumn = desiredColumn;
-		}
-		
-		public static void Up (ViMotionContext context)
-		{
-			int desiredColumn = System.Math.Max (context.Data.Caret.Column, context.Data.Caret.DesiredColumn);
-			
-			CaretMoveActions.Up (context.Data);
-			ViEditMode.RetreatFromLineEnd (context.Data);
-			
-			context.Data.Caret.DesiredColumn = desiredColumn;
+			ViMotionResult result = new ViMotionResult(context);
+			result.Column -= (context.Count ?? 1);
+			if (result.Column < 1) 
+				result.Column = 1;
+			return result;
 		}
 
-		public static void NextSubword (ViMotionContext context)
+		public static ViMotionResult Down (ViMotionContext context)
 		{
-			context.Data.Caret.Offset = context.Data.FindNextSubwordOffset (context.Data.Caret.Offset);
+			var result = new ViMotionResult(context);
+			var data = context.Data;
+			PersistColumn = System.Math.Max(PersistColumn, result.Column);
+			result.Line += (context.Count ?? 1);
+			if (result.Line >= data.LineCount)
+				result.Line = data.LineCount - 1;
+			ViEditMode.RetreatFromLineEnd (context, result);
+			DocumentLine line = data.Document.GetLine (result.Line);
+			if ((PersistColumn != result.Column) && (PersistColumn <= line.Length))
+			{
+				result.Column = PersistColumn;
+				PersistColumn = 0;
+			}
+			return result;	
+		}
+		
+		public static ViMotionResult Up (ViMotionContext context)
+		{
+			var result = new ViMotionResult(context);
+			var data = context.Data;
+			PersistColumn = System.Math.Max(PersistColumn, result.Column);
+			result.Line -= (context.Count ?? 1);
+			if (result.Line < 1)
+				result.Line = 1;
+			ViEditMode.RetreatFromLineEnd (context, result);
+			DocumentLine line = data.Document.GetLine (result.Line);
+			if ((PersistColumn != result.Column) && (PersistColumn <= line.Length))
+			{
+				result.Column = PersistColumn;
+				PersistColumn = 0;
+			}
+			return result;	
 		}
 
-		public static void NextWord (ViMotionContext context)
+		public static ViMotionResult NextSubword (ViMotionContext context)
 		{
-			context.Data.Caret.Offset = context.Data.FindNextWordOffset (context.Data.Caret.Offset);
+			var result = new ViMotionResult(context);
+			TextDocument doc = context.Data.Document;
+			for (int i=0; i < context.Count; i++)
+			{
+				int offset = doc.LocationToOffset(result.Line, result.Column);
+				offset = context.Data.FindNextSubwordOffset (offset);
+				DocumentLocation loc = doc.OffsetToLocation(offset);
+				result.Line = loc.Line;
+				result.Column = loc.Column;
+			}
+			return result;
 		}
 
-		public static void PreviousWord (ViMotionContext context)
+		public static ViMotionResult NextWord (ViMotionContext context)
 		{
-			context.Data.Caret.Offset = context.Data.FindPrevWordOffset (context.Data.Caret.Offset);
+			var result = new ViMotionResult(context);
+			TextDocument doc = context.Data.Document;
+			for (int i=0; i < context.Count; i++)
+			{
+				int offset = doc.LocationToOffset(result.Line, result.Column);
+				offset = context.Data.FindNextWordOffset (offset);
+				DocumentLocation loc = doc.OffsetToLocation(offset);
+				result.Line = loc.Line;
+				result.Column = loc.Column;
+			}
+			return result;
+		}
+
+		public static ViMotionResult PreviousWord (ViMotionContext context)
+		{
+			var result = new ViMotionResult(context);
+			TextDocument doc = context.Data.Document;
+			for (int i=0; i < context.Count; i++)
+			{
+				int offset = doc.LocationToOffset(result.Line, result.Column);
+				offset = context.Data.FindPrevWordOffset (offset);
+				DocumentLocation loc = doc.OffsetToLocation(offset);
+				result.Line = loc.Line;
+				result.Column = loc.Column;
+			}
+			return result;
 		}
 		
-		public static void PreviousSubword (ViMotionContext context)
+		public static ViMotionResult PreviousSubword (ViMotionContext context)
 		{
-			context.Data.Caret.Offset = context.Data.FindPrevSubwordOffset (context.Data.Caret.Offset);
+			var result = new ViMotionResult(context);
+			TextDocument doc = context.Data.Document;
+			for (int i=0; i < context.Count; i++)
+			{
+				int offset = doc.LocationToOffset(result.Line, result.Column);
+				offset = context.Data.FindPrevSubwordOffset (offset);
+				DocumentLocation loc = doc.OffsetToLocation(offset);
+				result.Line = loc.Line;
+				result.Column = loc.Column;
+			}
+			return result;
 		}
 		
-		public static void WordEnd (ViMotionContext context)
+		public static ViMotionResult WordEnd (ViMotionContext context)
 		{
-			context.Data.Caret.Offset = context.Data.FindCurrentWordEnd (context.Data.Caret.Offset);
+			var result = new ViMotionResult(context);
+			TextDocument doc = context.Data.Document;
+			for (int i=0; i < context.Count; i++)
+			{
+				int offset = doc.LocationToOffset(result.Line, result.Column);
+				offset = context.Data.FindCurrentWordEnd (offset);
+				DocumentLocation loc = doc.OffsetToLocation(offset);
+				result.Line = loc.Line;
+				result.Column = loc.Column;
+			}
+			return result;
 		}
 		
-		public static void WordStart (ViMotionContext context)
+		public static ViMotionResult WordStart (ViMotionContext context)
 		{
-			context.Data.Caret.Offset = context.Data.FindCurrentWordStart (context.Data.Caret.Offset);
+			var result = new ViMotionResult(context);
+			TextDocument doc = context.Data.Document;
+			for (int i=0; i < context.Count; i++)
+			{
+				int offset = doc.LocationToOffset(result.Line, result.Column);
+				offset = context.Data.FindCurrentWordStart (offset);
+				DocumentLocation loc = doc.OffsetToLocation(offset);
+				result.Line = loc.Line;
+				result.Column = loc.Column;
+			}
+			return result;
 		}
 		
 		public static void LineEnd (ViMotionContext context)

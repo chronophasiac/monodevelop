@@ -159,7 +159,7 @@ namespace Mono.TextEditor
 			}
 		}
 
-		static int MoveCaretOutOfFolding (TextEditorData data, int offset, bool moveToEnd = true)
+		public static int MoveCaretOutOfFolding (TextEditorData data, int offset, bool moveToEnd = true)
 		{
 			IEnumerable<FoldSegment > foldings = data.Document.GetFoldingsFromOffset (offset);
 			foreach (FoldSegment folding in foldings.Where (f => f.Offset < offset && offset < f.EndOffset)) {

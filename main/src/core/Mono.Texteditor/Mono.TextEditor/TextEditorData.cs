@@ -44,7 +44,7 @@ namespace Mono.TextEditor
 		ITextEditorOptions options;
 		readonly TextDocument document; 
 		Caret      caret;
-		
+
 		static Adjustment emptyAdjustment = new Adjustment (0, 0, 0, 0, 0, 0);
 		
 		Adjustment hadjustment = emptyAdjustment; 

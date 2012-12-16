@@ -31,52 +31,48 @@ namespace Mono.TextEditor.Vi
 	{
 		public int Line;
 		public int Column;
-		public int? Offset;
 
-		public ViMotionResult (int line, int column, int? offset = null)
+		public ViMotionResult (int line, int column)
 		{
 			this.Line = line;
 			this.Column = column;
-			this.Offset = offset;
+		}
+
+		public ViMotionResult(ViMotionContext context)
+		{
+			this.Line = context.Data.Caret.Line;
+			this.Column = context.Data.Caret.Column;
 		}
 
 		public TextEditorData ApplyTo (TextEditorData data)
 		{
 			data.Caret.Line = this.Line;
 			data.Caret.Column = this.Column;
-			if (this.Offset.HasValue)
-				data.Caret.Offset = this.Offset.Value;
 			return data;
 		}
 
 		public static Func<ViMotionContext, ViMotionResult> DoMotion (Action<ViMotionContext> motion)
 		{
 			return (ViMotionContext context) => { 
-				if (context.StartingLine.HasValue) context.Data.Caret.Line = context.StartingLine.Value;
-				if (context.StartingColumn.HasValue) context.Data.Caret.Column = context.StartingColumn.Value;
-				int line = context.Data.Caret.Line;
-				int column = context.Data.Caret.Column; 
-				motion(context);
-				ViMotionResult result = new ViMotionResult(context.Data.Caret.Line, context.Data.Caret.Column);
-				context.Data.Caret.Line = line;
-				context.Data.Caret.Column = column;
+				int count = context.Count ?? 1;
+				ViMotionResult result = null;
+				for (int i = 0; i < count; i++)
+				{
+					if (context.StartingLine.HasValue) context.Data.Caret.Line = context.StartingLine.Value;
+					if (context.StartingColumn.HasValue) context.Data.Caret.Column = context.StartingColumn.Value;
+					int line = context.Data.Caret.Line;
+					int column = context.Data.Caret.Column; 
+					motion(context);
+					result = new ViMotionResult(context.Data.Caret.Line, context.Data.Caret.Column);
+					context.StartingLine = result.Line;
+					context.StartingColumn = result.Column;
+					context.Data.Caret.Line = line;
+					context.Data.Caret.Column = column;
+				}
+				context.StartingLine = null;
+				context.StartingColumn = null;
 				return result;
 			};
-		}
-
-		public static ViMotionResult RepeatMotion (ViMotionContext context, Func<ViMotionContext, ViMotionResult> motion)
-		{
-			ViMotionResult result = null;
-			int count = context.Count ?? 1;
-			for (int i = 0; i < count; i++)
-			{
-				result = motion(context);
-				context.StartingLine = result.Line;
-				context.StartingColumn = result.Column;
-			}
-			context.StartingLine = null;
-			context.StartingColumn = null;
-			return result;
 		}
 	}
 }

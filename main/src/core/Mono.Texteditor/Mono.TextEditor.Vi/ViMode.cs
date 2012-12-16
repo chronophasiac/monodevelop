@@ -31,6 +31,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Linq;
+using ICSharpCode.NRefactory;
 
 namespace Mono.TextEditor.Vi
 {
@@ -110,7 +111,7 @@ namespace Mono.TextEditor.Vi
 		Dictionary<char,ViMacro> macros = new Dictionary<char, ViMacro>();
 		char macros_lastplayed = '@'; // start with the illegal macro character
 		string statusText = "";
-		public static int? count;
+		static int? count;
 
 		/// <summary>
 		/// The macro currently being implemented. Will be set to null and checked as a flag when required.
@@ -132,7 +133,7 @@ namespace Mono.TextEditor.Vi
 			}
 	
 		}
-		
+
 		protected virtual string RunExCommand (string command)
 		{
 			switch (command[0]) {
@@ -488,7 +489,7 @@ namespace Mono.TextEditor.Vi
 					if (oldAnchor < oldLead) {
 						ViMotionsAndCommands.Left(context).ApplyTo(context.Data);
 					} else {
-						ViMotionResult result = SelectionActions.FromMotion (ViMotionResult.DoMotion (ViMotionsAndCommands.Right)) (context);
+						ViMotionResult result = SelectionActions.FromMotion (ViMotionsAndCommands.Right) (context);
 						result.ApplyTo(context.Data);
 					}
 				}
@@ -501,7 +502,7 @@ namespace Mono.TextEditor.Vi
 					else if (oldAnchor > oldLead && newAnchor < newLead && (
 							(newLead.Line == newAnchor.Line && oldLead.Line == oldAnchor.Line - 1) ||
 							(newLead.Line == newAnchor.Line + 1 && oldLead.Line == oldAnchor.Line)))
-						SelectionActions.FromMotion (ViMotionResult.DoMotion (ViMotionsAndCommands.Right)) (context);
+						SelectionActions.FromMotion (ViMotionsAndCommands.Right) (context);
 				}
 				return res;
 			};
@@ -533,6 +534,20 @@ namespace Mono.TextEditor.Vi
 					ViMotionsAndCommands.Left (new ViMotionContext(data)).ApplyTo(data);
 				}
 			}
+		}
+
+		internal static ViMotionResult RetreatFromLineEnd (ViMotionContext context, ViMotionResult result)
+		{
+			if (context.Data.Caret.Mode == CaretMode.Block && !context.Data.IsSomethingSelected && !context.Data.Caret.PreserveSelection) {
+				TextDocument document = context.Data.Document;
+				int resultOffset = document.GetOffset (new TextLocation(result.Line, result.Column));
+				while (DocumentLocation.MinColumn < result.Column && (resultOffset >= document.TextLength
+				                                 || IsEol (document.GetCharAt (result.Line, result.Column)))) {
+					result.Column--;
+					resultOffset = document.GetOffset (new TextLocation(result.Line, result.Column));
+				}
+			}
+			return result;
 		}
 
 		/// <summary>
@@ -628,6 +643,30 @@ namespace Mono.TextEditor.Vi
 					Reset (string.Empty);
 				});
 			}
+		}
+
+		protected void RunMotions (params Func<Vi.ViMotionContext, Vi.ViMotionResult>[] motions)
+		{
+			HideMouseCursor ();
+			try {
+				using (var undo = Document.OpenUndoGroup ()) {
+					foreach (var motion in motions)
+					{
+						if (count.HasValue)
+						{
+							motion (new Vi.ViMotionContext(this.Data, count)).ApplyTo(this.Data);
+							count = null;
+						}
+						else motion (new Vi.ViMotionContext(this.Data)).ApplyTo(this.Data);
+					}
+				}
+			} catch (Exception e) {
+				var sb = new System.Text.StringBuilder ("Error while executing action(s) ");
+				foreach (var action in motions)
+					sb.AppendFormat (" {0}", action);
+				Console.WriteLine (sb.ToString () + ": " + e);
+			}
+		
 		}
 
 		enum State {

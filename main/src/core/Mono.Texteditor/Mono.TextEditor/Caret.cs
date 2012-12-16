@@ -319,7 +319,7 @@ namespace Mono.TextEditor
 			Offset = offset;
 		}
 		
-		protected virtual void OnPositionChanged (DocumentLocationEventArgs args)
+		public virtual void OnPositionChanged (DocumentLocationEventArgs args)
 		{
 			TextEditorData.Document.EnsureOffsetIsUnfolded (Offset);
 			if (PositionChanged != null) 

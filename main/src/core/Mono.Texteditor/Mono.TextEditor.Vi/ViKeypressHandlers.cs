@@ -81,7 +81,7 @@ namespace Mono.TextEditor.Vi
 				case 'v':
 					Status = "-- VISUAL --";
 					state = State.Visual;
-					RunMotions (ViEditMode.VisualSelectionFromMotion (ViMotionResult.DoMotion(ViMotionsAndCommands.Right)));
+					RunMotions (ViEditMode.VisualSelectionFromMotion (ViMotionsAndCommands.Right));
 					return;
 						
 				case 'd':

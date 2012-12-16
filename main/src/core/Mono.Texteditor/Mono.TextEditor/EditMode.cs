@@ -205,31 +205,6 @@ namespace Mono.TextEditor
 		
 		}
 
-		protected void RunMotions (params Func<Vi.ViMotionContext, Vi.ViMotionResult>[] motions)
-		{
-			HideMouseCursor ();
-			try {
-				using (var undo = Document.OpenUndoGroup ()) {
-					foreach (var motion in motions)
-					{
-						if (Vi.ViEditMode.count.HasValue)
-						{
-							Vi.ViMotionResult result = Vi.ViMotionResult.RepeatMotion(new Vi.ViMotionContext(this.Data, Vi.ViEditMode.count),motion);
-							result.ApplyTo(this.Data);
-							Vi.ViEditMode.count = null;
-						}
-						else motion (new Vi.ViMotionContext(this.Data)).ApplyTo(this.Data);
-					}
-				}
-			} catch (Exception e) {
-				var sb = new System.Text.StringBuilder ("Error while executing action(s) ");
-				foreach (var action in motions)
-					sb.AppendFormat (" {0}", action);
-				Console.WriteLine (sb.ToString () + ": " + e);
-			}
-		
-		}
-
 		static Dictionary<Gdk.Key, Gdk.Key> keyMappings = new Dictionary<Gdk.Key, Gdk.Key> ();
 		static EditMode ()
 		{

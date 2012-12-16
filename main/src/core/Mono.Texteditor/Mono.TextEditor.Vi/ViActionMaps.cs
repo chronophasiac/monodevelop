@@ -40,10 +40,10 @@ namespace Mono.TextEditor.Vi
 			switch (c) {
 			case 'W':
 			case 'w':
-				return ViMotionResult.DoMotion(ViMotionsAndCommands.WordEnd);
+				return ViMotionsAndCommands.WordEnd;
 			case 'B':
 			case 'b':
-				return ViMotionResult.DoMotion(ViMotionsAndCommands.WordStart);
+				return ViMotionsAndCommands.WordStart;
 			}
 			return GetNavCharAction (c);
 		}
@@ -54,19 +54,19 @@ namespace Mono.TextEditor.Vi
 			case 'h':
 				return ViMotionsAndCommands.Left;
 			case 'b':
-				return ViMotionResult.DoMotion(ViMotionsAndCommands.PreviousSubword);
+				return ViMotionsAndCommands.PreviousSubword;
 			case 'B':
-				return ViMotionResult.DoMotion(ViMotionsAndCommands.PreviousWord);
+				return ViMotionsAndCommands.PreviousWord;
 			case 'l':
-				return ViMotionResult.DoMotion(ViMotionsAndCommands.Right);
+				return ViMotionsAndCommands.Right;
 			case 'w':
-				return ViMotionResult.DoMotion(ViMotionsAndCommands.NextSubword);
+				return ViMotionsAndCommands.NextSubword;
 			case 'W':
-				return ViMotionResult.DoMotion(ViMotionsAndCommands.NextWord);
+				return ViMotionsAndCommands.NextWord;
 			case 'k':
-				return ViMotionResult.DoMotion(ViMotionsAndCommands.Up);
+				return ViMotionsAndCommands.Up;
 			case 'j':
-				return ViMotionResult.DoMotion(ViMotionsAndCommands.Down);
+				return ViMotionsAndCommands.Down;
 			case '%':
 				return ViMotionResult.DoMotion(ViMotionContext.ViDataToContext(MiscActions.GotoMatchingBracket));
 			case '^':
@@ -97,15 +97,15 @@ namespace Mono.TextEditor.Vi
 					
 				case Gdk.Key.Right:
 				case Gdk.Key.KP_Right:
-					return ViMotionResult.DoMotion(ViMotionsAndCommands.Right);
+					return ViMotionsAndCommands.Right;
 					
 				case Gdk.Key.Up:
 				case Gdk.Key.KP_Up:
-					return ViMotionResult.DoMotion(ViMotionsAndCommands.Up);
+					return ViMotionsAndCommands.Up;
 					
 				case Gdk.Key.Down:
 				case Gdk.Key.KP_Down:
-					return ViMotionResult.DoMotion(ViMotionsAndCommands.Down);
+					return ViMotionsAndCommands.Down;
 				
 				//not strictly vi, but more useful IMO
 				case Gdk.Key.KP_Home:
